@@ -10,7 +10,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "comments")
 public class Comment {
     @Id
     private ObjectId id;

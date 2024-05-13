@@ -1,13 +1,18 @@
-// Cours class
 package A.M.PFE.alemni.cours;
 
 import A.M.PFE.alemni.comment.Comment;
+import A.M.PFE.alemni.cours.quiz.Quiz;
+
 import lombok.*;
-import org.bson.types.ObjectId;
+
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Document(collection = "cours")
@@ -16,13 +21,22 @@ import java.util.List;
 @Data
 public class Cours {
     @Id
-    private ObjectId id ;
+    private String id;
     private String title;
-    private String description ;
-    private double price ;
-    private double rating ;
-    private List<String> category; // Changed type to List<String>
+    private String description;
+    private double price;
+    private double rating;
+    private List<String> category;
+    private String courseImage; // URL to the course's main image
+    private List<Media> media = new ArrayList<>(); // List to store different media types
     @DocumentReference
-    private List<Comment>commentIds;
-    private String DBid = new ObjectId().toString();
+    private List<Comment> commentIds = new ArrayList<>() ;
+    @DocumentReference
+    private List<Quiz> quizzes = new ArrayList<>() ;
+    private String educatorName; // Store the name of the educator who created the course
+    private String educatorId;
+    @CreatedDate
+    private LocalDateTime creationDate;
+    @LastModifiedDate
+    private LocalDateTime lastModifiedDate;
 }

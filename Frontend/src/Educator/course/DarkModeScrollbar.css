@@ -1,0 +1,35 @@
+/* Dark mode floating scrollbar styles */
+.dark-mode-videos-section::-webkit-scrollbar {
+    width: 12px; /* Width of the scrollbar */
+}
+
+.dark-mode-videos-section::-webkit-scrollbar-track {
+    background-color: transparent; /* Transparent background for the scrollbar track */
+}
+
+.dark-mode-videos-section::-webkit-scrollbar-thumb {
+    background-color: #4a4a4a; /* Dark color for the scrollbar thumb */
+    border-radius: 6px; /* Rounded corners for the scrollbar thumb */
+}
+
+.dark-mode-videos-section::-webkit-scrollbar-thumb:hover {
+    background-color: #5a5a5a; /* Darker color for hover state of the scrollbar thumb */
+}
+
+/* Light mode scrollbar styles */
+.light-mode-videos-section::-webkit-scrollbar {
+    width: 12px; /* Width of the scrollbar */
+}
+
+.light-mode-videos-section::-webkit-scrollbar-track {
+    background-color: #f0f0f0; /* Light background for the scrollbar track */
+}
+
+.light-mode-videos-section::-webkit-scrollbar-thumb {
+    background-color: #ccc; /* Light color for the scrollbar thumb */
+    border-radius: 6px; /* Rounded corners for the scrollbar thumb */
+}
+
+.light-mode-videos-section::-webkit-scrollbar-thumb:hover {
+    background-color: #aaa; /* Darker color for hover state of the scrollbar thumb */
+}

@@ -1,49 +1,101 @@
 package A.M.PFE.alemni.user;
 
-import A.M.PFE.alemni.auth.VerificationService;
+import A.M.PFE.alemni.cours.NotFoundException;
+import A.M.PFE.alemni.user.Security.JwtUtils;
+import A.M.PFE.alemni.user.model.CardInfoRequest;
+import A.M.PFE.alemni.user.model.User;
+import A.M.PFE.alemni.user.register.VerificationService;
 import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import javax.naming.AuthenticationException;
 import java.util.Optional;
 
 @Service
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final VerificationService verificationService;
+    private final JwtUtils jwtUtils;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Autowired
-    private VerificationService verificationService;
-
+    public UserService(UserRepository userRepository, VerificationService verificationService, JwtUtils jwtUtils) {
+        this.userRepository = userRepository;
+        this.verificationService = verificationService;
+        this.jwtUtils = jwtUtils;
+    }
+    //register
     public void registerUser(User user) throws MessagingException {
-        // Set the user as unverified
-        user.setVerified(false);
+        // Check if user with the given email already exists
+        Optional<User> existingUser = userRepository.findByEmail(user.getEmail());
+        if (existingUser.isPresent()) {
+            // User with the given email already exists
+            throw new MessagingException("User with this email already exists");
+        }
 
-        // Generate a verification token
+        // Encode the user's password
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setVerified(false);
         user.generateVerificationToken();
 
-        // Save the unverified user
+        // Save the new user
         User savedUser = userRepository.save(user);
 
         // Send verification email
         verificationService.sendVerificationEmail(savedUser.getEmail(), savedUser.getVerificationToken());
     }
 
+    //login
+    public User authenticateUser(String email, String password) throws AuthenticationException {
+        // Check if user with the given email exists
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if (userOptional.isEmpty()) {
+            // User with the given email does not exist
+            throw new AuthenticationException("User with this email does not exist");
+        }
 
-    public boolean verifyUser(String token) {
-        // Find the user by verification token
-        Optional<User> optionalUser = userRepository.findByVerificationToken(token);
+        // Retrieve the user from the optional
+        User user = userOptional.get();
 
+        // Check if the provided password matches the user's stored password
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            // Passwords do not match
+            throw new AuthenticationException("Invalid password");
+        }
+
+        // User is authenticated
+        return user;
+    }
+
+
+    //pfp
+    public void updateUserProfilePicture(String id, String profilePicturePath) {
+        Optional<User> optionalUser = userRepository.findById(id);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
-            if (!user.isVerified()) {
-                // Verify the user
-                user.setVerified(true);
-                userRepository.save(user);
-                return true; // Verification successful
-            }
+            user.setProfilePicture(profilePicturePath);
+            userRepository.save(user);
         }
-        return false; // Verification failed
     }
+    //card
+    public boolean hasCardInformation(String userId) {
+        return userRepository.findById(userId).map(User::getCardNumber).isPresent();
+    }
+    public void addCardInfo(String userId, CardInfoRequest cardInfoRequest) {
+        Optional<User> optionalUser = userRepository.findById(userId);
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            // Populate the user's card information
+            user.setCardNumber(cardInfoRequest.getCardNumber());
+            user.setExpiryDate(cardInfoRequest.getExpiryDate());
+            user.setCvv(cardInfoRequest.getCvv());
+            userRepository.save(user);
+        } else {
+            throw new NotFoundException("User not found with id: " + userId);
+        }
+    }
+
 }
