@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../contexts/AuthContext';
+import NavBar from '../../components/EducatorComponents/EducatorNavBar';
+
 
 function QuizUpdateForm({ quiz, onSave, onCancel }) {
     const { user } = useAuth();
@@ -79,6 +81,7 @@ function QuizUpdateForm({ quiz, onSave, onCancel }) {
     };
 
     return (
+        <div><NavBar />
         <div className="p-4 border bg-gray-100 rounded">
             <h3 className="text-xl font-bold mb-2">Edit Quiz</h3>
             <form onSubmit={handleSubmit}>
@@ -166,6 +169,7 @@ function QuizUpdateForm({ quiz, onSave, onCancel }) {
                     </button>
                 </div>
             </form>
+        </div>
         </div>
     );
 }

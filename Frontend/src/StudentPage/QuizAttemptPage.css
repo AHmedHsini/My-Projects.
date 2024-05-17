@@ -75,3 +75,30 @@ body {
     background-color: #bdc3c7;
     cursor: not-allowed;
 }
+
+.evaluation {
+    margin-top: 10px;
+}
+
+.correct-answer {
+    color: #27ae60;
+}
+
+.incorrect-answer {
+    color: #e74c3c;
+}
+.back-button {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #3498db;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    transition: background-color 0.3s ease;
+}
+
+.back-button:hover {
+    background-color: #2980b9;
+}

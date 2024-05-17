@@ -23,7 +23,7 @@ public class VerificationService {
     }
 
     public void sendVerificationEmail(String userEmail, String verificationToken) throws MessagingException {
-        String verificationUrl = "http://localhost:8080/api/verification?token=" + verificationToken;
+        String verificationUrl = "http://localhost:5173/email-verification/" + verificationToken;
         emailService.sendEmail(userEmail, "Email Verification", "Please click the following link to verify your email: " + verificationUrl);
     }
 

@@ -22,6 +22,7 @@ export const AuthProvider = ({ children }) => {
                 email: userData.email,
                 firstName: userData.firstName,
                 lastName: userData.lastName,
+                profilePicture: userData.profilePicture, 
                 role: userData.role,
                 token, // Include the token in the user object
             });

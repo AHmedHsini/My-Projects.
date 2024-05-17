@@ -53,7 +53,11 @@ public class CoursController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
-
+    //search
+    @GetMapping("/search")
+    public List<Cours> searchCourses(@RequestParam String keyword) {
+        return coursRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(keyword, keyword);
+    }
     // Get courses uploaded by a specific educator
     @GetMapping("/educator/{educatorId}")
     public ResponseEntity<List<Cours>> getCoursesByEducator(@PathVariable String educatorId) {
@@ -105,6 +109,29 @@ public class CoursController {
             e.printStackTrace();
             // Return internal server error status for other exceptions
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    //delete media
+    @DeleteMapping("/{courseId}/delete-file")
+    public ResponseEntity<String> deleteFile(@PathVariable String courseId, @RequestParam("fileUrl") String fileUrl)  {
+        try {
+            // Delete the file from storage
+            fileStorageService.delete(fileUrl);
+
+            // Delete the file from the course
+            coursService.deleteMediaFromCourse(courseId, fileUrl);
+
+            return new ResponseEntity<>("File deleted successfully", HttpStatus.OK);
+        } catch (IOException e) {
+            // Log specific exception information
+            System.err.println("IOException occurred during file deletion: " + e.getMessage());
+            e.printStackTrace();
+            return new ResponseEntity<>("Failed to delete file due to I/O error", HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (Exception e) {
+            // Log other exception information
+            System.err.println("Exception occurred during file deletion: " + e.getMessage());
+            e.printStackTrace();
+            return new ResponseEntity<>("Failed to delete file", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -318,6 +345,59 @@ public class CoursController {
             return ResponseEntity.ok(Map.of("isPurchased", isPurchased));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error checking course purchase status: " + e.getMessage());
+        }
+    }
+    @GetMapping("/my-courses")
+    public ResponseEntity<List<Cours>> getPurchasedCourses(@RequestParam("userId") String userId) {
+        try {
+            // Fetch the user by ID
+            Optional<User> userOptional = userRepository.findById(userId);
+            if (!userOptional.isPresent()) {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+            User user = userOptional.get();
+
+            // Get the list of purchased course IDs
+            List<String> purchasedCourseIds = user.getPurchasedCourses().stream()
+                    .map(PurchasedCourse::getCourseId)
+                    .collect(Collectors.toList());
+
+            // Fetch the courses from the repository
+            List<Cours> purchasedCourses = coursRepository.findAllById(purchasedCourseIds);
+
+            return new ResponseEntity<>(purchasedCourses, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @GetMapping("/purchase-history")
+    public ResponseEntity<List<Map<String, Object>>> getPurchaseHistory(@RequestParam("userId") String userId) {
+        try {
+            Optional<User> userOptional = userRepository.findById(userId);
+            if (!userOptional.isPresent()) {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+            User user = userOptional.get();
+            List<PurchasedCourse> purchaseHistory = user.getPurchasedCourses();
+
+            List<Map<String, Object>> response = purchaseHistory.stream().map(purchasedCourse -> {
+                Map<String, Object> courseDetails = new HashMap<>();
+                Optional<Cours> courseOptional = coursRepository.findById(purchasedCourse.getCourseId());
+                if (courseOptional.isPresent()) {
+                    Cours course = courseOptional.get();
+                    courseDetails.put("courseId", course.getId());
+                    courseDetails.put("title", course.getTitle());
+                    courseDetails.put("description", course.getDescription());
+                    courseDetails.put("courseImage", course.getCourseImage());
+                    courseDetails.put("price", course.getPrice());
+                    courseDetails.put("purchaseDate", purchasedCourse.getPurchaseDate());
+                }
+                return courseDetails;
+            }).collect(Collectors.toList());
+
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

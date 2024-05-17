@@ -43,7 +43,7 @@ const StudentsPage = () => {
                   </td>
                   <td className="bg-gray-100 px-4 py-3 text-center">
                     <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                      <Link to={`/userDetails/${student.id}`}>
+                      <Link to={`/StudentDetails/${student.id}`}>
                         View Details
                       </Link>
                     </button>

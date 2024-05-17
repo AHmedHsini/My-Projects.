@@ -95,7 +95,6 @@ function Courses() {
     return (
         <div className={`min-h-screen ${containerBgColor} ${textColor}`}>
             <NavBar />
-
             <div className="container mx-auto flex justify-center mt-8">
                 {/* Course Details */}
                 <div
@@ -202,7 +201,7 @@ function Courses() {
                         {/* Quizzes and PDF Files Section */}
                         <div>
                             {/* Quizzes Section */}
-                            <div className={`rounded-lg ${contentBgColor} ${isDarkMode ? 'shadow-gray-900' : 'shadow-lg'} p-4 mb-6 relative`}>
+                            <div className={`rounded-lg ${contentBgColor} ${isDarkMode ? 'shadow-gray-900' : 'shadow-lg'} p-4 mb-6 relative`}onClick={() => handleEditQuiz(quiz)}>
                                 {/* Edit quizzes button */}
                                 <div className="absolute top-0 right-0 p-2">
                                     <FaEdit

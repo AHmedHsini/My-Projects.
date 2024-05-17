@@ -1,9 +1,10 @@
 package A.M.PFE.alemni.cours.quiz;
 
 import lombok.*;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
-
+@Document("Quiz Attempt")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

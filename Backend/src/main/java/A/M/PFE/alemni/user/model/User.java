@@ -38,15 +38,7 @@ public class User {
     private String cvv;
 
     private List<PurchasedCourse> purchasedCourses = new ArrayList<>();
-
-    public void addCourse(PurchasedCourse purchasedCourse) {
-        if (this.purchasedCourses == null) {
-            this.purchasedCourses = new ArrayList<>();
-        }
-        this.purchasedCourses.add(purchasedCourse);
-    }
-
-
+    
 
     // Generate verification token
     public void generateVerificationToken() {

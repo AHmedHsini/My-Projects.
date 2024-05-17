@@ -35,7 +35,7 @@ const Sidebar = () => {
   return (
     <div className="sidebar" style={sidebarStyles}>
       <h2 className="sidebar-title" style={titleStyles}>
-        Admin Sidebar
+        Welcome Admin !
       </h2>
       <ul
         className="sidebar-menu"
@@ -77,23 +77,12 @@ const Sidebar = () => {
             Students
           </Link>
         </li>
-        <li className="sidebar-menu-item">
-          <Link
-            to="/admin/products"
-            className="sidebar-link"
-            style={{
-              ...linkStyles,
-              ...(location.pathname === "/admin/products" && activeStyles),
-            }}
-          >
-            Products
-          </Link>
-        </li>
+
         {/* Logout Link */}
         <li className="sidebar-menu-item">
-          <Link to="/login" className="sidebar-link" style={linkStyles}>
+          <a href="/login" className="sidebar-link" style={linkStyles}>
             Logout
-          </Link>
+          </a>
         </li>
       </ul>
     </div>

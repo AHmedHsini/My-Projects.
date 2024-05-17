@@ -2,30 +2,36 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { useAuth } from '../../contexts/AuthContext'; // Import the useAuth hook
+import { useAuth } from '../../contexts/AuthContext';
+import NavBar from '../../components/EducatorComponents/EducatorNavBar';
+
 
 function CreateQuizForm() {
     const [title, setTitle] = useState('');
     const [questions, setQuestions] = useState([]);
     const navigate = useNavigate();
     const { courseId } = useParams();
-
-    // Use the useAuth hook to get the user object
     const { user } = useAuth();
 
     const handleAddQuestion = () => {
-        setQuestions([...questions, { questionText: '', answers: [] }]);
+        setQuestions([...questions, { questionText: '', mark: 1, answers: [{ text: '', correct: false }] }]);
     };
 
-    const handleAddAnswer = (index) => {
+    const handleAddAnswer = (questionIndex) => {
         const updatedQuestions = [...questions];
-        updatedQuestions[index].answers.push({ text: '', isCorrect: false });
+        updatedQuestions[questionIndex].answers.push({ text: '', correct: false });
         setQuestions(updatedQuestions);
     };
 
     const handleQuestionChange = (index, questionText) => {
         const updatedQuestions = [...questions];
         updatedQuestions[index].questionText = questionText;
+        setQuestions(updatedQuestions);
+    };
+
+    const handleMarksChange = (index, mark) => {
+        const updatedQuestions = [...questions];
+        updatedQuestions[index].mark = mark;
         setQuestions(updatedQuestions);
     };
 
@@ -37,14 +43,13 @@ function CreateQuizForm() {
 
     const handleAnswerCorrectChange = (questionIndex, answerIndex, isCorrect) => {
         const updatedQuestions = [...questions];
-        updatedQuestions[questionIndex].answers[answerIndex].isCorrect = isCorrect;
+        updatedQuestions[questionIndex].answers[answerIndex].correct = isCorrect;
         setQuestions(updatedQuestions);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Check if user is available
         if (!user) {
             toast.error('User is not authenticated');
             return;
@@ -71,6 +76,8 @@ function CreateQuizForm() {
     };
 
     return (
+        <div>
+            <NavBar />
         <div className="max-w-lg mx-auto">
             <h2 className="text-2xl font-bold mb-4">Create Quiz</h2>
             <form onSubmit={handleSubmit}>
@@ -97,14 +104,22 @@ function CreateQuizForm() {
                                 required
                             />
                         </div>
+                        <div className="mb-2">
+                            <label className="block text-gray-700">Marks</label>
+                            <input
+                                type="number"
+                                value={question.mark}
+                                onChange={(e) => handleMarksChange(index, parseInt(e.target.value))}
+                                className="w-full px-3 py-2 border rounded"
+                                required
+                            />
+                        </div>
                         {question.answers.map((answer, answerIndex) => (
                             <div key={answerIndex} className="flex items-center mb-2">
                                 <input
                                     type="text"
                                     value={answer.text}
-                                    onChange={(e) =>
-                                        handleAnswerChange(index, answerIndex, e.target.value)
-                                    }
+                                    onChange={(e) => handleAnswerChange(index, answerIndex, e.target.value)}
                                     className="w-full px-3 py-2 border rounded"
                                     placeholder="Answer text"
                                     required
@@ -112,10 +127,8 @@ function CreateQuizForm() {
                                 <label className="ml-2 flex items-center">
                                     <input
                                         type="checkbox"
-                                        checked={answer.isCorrect}
-                                        onChange={(e) =>
-                                            handleAnswerCorrectChange(index, answerIndex, e.target.checked)
-                                        }
+                                        checked={answer.correct}
+                                        onChange={(e) => handleAnswerCorrectChange(index, answerIndex, e.target.checked)}
                                         className="mr-2"
                                     />
                                     Correct
@@ -142,6 +155,7 @@ function CreateQuizForm() {
                     Create Quiz
                 </button>
             </form>
+        </div>
         </div>
     );
 }

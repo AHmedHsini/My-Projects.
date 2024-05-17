@@ -7,7 +7,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -55,13 +57,29 @@ public class QuizController {
         return ResponseEntity.noContent().build();
     }
     @PostMapping("/{quizId}/attempt")
-    public ResponseEntity<QuizAttempt> attemptQuiz(@PathVariable String quizId, @RequestBody QuizAttempt quizAttemptDto) {
-        try {
-            QuizAttempt completedAttempt = quizService.attemptQuiz(quizId, quizAttemptDto.getUserId(), quizAttemptDto.getProvidedAnswers());
-            return ResponseEntity.ok(completedAttempt);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+    public ResponseEntity<QuizAttempt> attemptQuiz(@PathVariable String quizId, @RequestBody Map<String, Object> requestBody) {
+        // Extract userId from the request body
+        String userId = (String) requestBody.get("userId");
+
+        // Extract providedAnswers from the request body
+        List<List<Map<String, Object>>> providedAnswers = (List<List<Map<String, Object>>>) requestBody.get("providedAnswers");
+
+        // Convert providedAnswers to List<Answer>
+        List<Answer> answers = new ArrayList<>();
+        for (List<Map<String, Object>> answerList : providedAnswers) {
+            for (Map<String, Object> answerMap : answerList) {
+                // Assuming "text" is the key for the answer text and "correct" is the key for the correctness flag
+                String text = (String) answerMap.get("text");
+                Boolean correct = (Boolean) answerMap.get("correct");
+                answers.add(new Answer(text, correct));
+            }
         }
+
+        // Call your attemptQuiz method passing quizId, userId, and providedAnswers
+        QuizAttempt quizAttempt = quizService.attemptQuiz(quizId, userId, answers);
+
+        // Return the ResponseEntity
+        return ResponseEntity.ok(quizAttempt);
     }
 
 }

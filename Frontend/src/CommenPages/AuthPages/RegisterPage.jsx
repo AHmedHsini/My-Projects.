@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import Header from "../headerComponents/Header";
 
 function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -100,6 +101,8 @@ function RegisterPage() {
   };
 
   return (
+    <div>
+    <Header />
     <div
       className="flex justify-center items-center"
       style={{
@@ -291,6 +294,7 @@ function RegisterPage() {
         </form>
       </div>
     </div>
+  </div>
   );
 }
 

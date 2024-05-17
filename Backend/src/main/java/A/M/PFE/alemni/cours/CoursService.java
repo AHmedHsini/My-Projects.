@@ -207,10 +207,39 @@ public class CoursService {
         // Save the updated course
         coursRepository.save(course);
     }
+    public void deleteMediaFromCourse(String courseId, String fileUrl) {
+        // Find the course
+        Optional<Cours> courseOptional = coursRepository.findById(courseId);
+        if (!courseOptional.isPresent()) {
+            throw new NotFoundException("Course not found");
+        }
+
+        Cours course = courseOptional.get();
+
+        // Check if the file exists in the course's media list
+        Optional<Media> mediaOptional = course.getMedia().stream()
+                .filter(media -> media.getUrl().equals(fileUrl))
+                .findFirst();
+
+        if (!mediaOptional.isPresent()) {
+            throw new NotFoundException("File not found in course");
+        }
+
+        // Remove the file from the course's media list
+        Media media = mediaOptional.get();
+        course.getMedia().remove(media);
+
+        // Delete the file entry from the database (if applicable)
+        // mediaRepository.delete(media);
+
+        // Save the updated course
+        coursRepository.save(course);
+    }
     public boolean hasPurchasedCourse(String userId, String courseId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
         return user.getPurchasedCourses().stream()
                 .anyMatch(purchasedCourse -> purchasedCourse.getCourseId().equals(courseId));
     }
+
 
 }

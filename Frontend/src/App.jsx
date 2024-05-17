@@ -7,7 +7,6 @@ import LoginPage from './CommenPages/AuthPages/LoginPage';
 import AdminPage from './Admin/AdminPage';
 import HomePage from './CommenPages/HomePage';
 import EducatorPage from './Educator/EducatorPage';
-import StudentPage from './StudentPage/StudentPage';
 import ProfilePage from './CommenPages/ProfilePage';
 import AddCourseForm from './Educator/course/CreateCourse';
 import ViewCourse from './Educator/course/CoursePage';
@@ -16,12 +15,18 @@ import CreateQuizForm from './Educator/quiz/CreateQuiz';
 import ManageQuizzes from './Educator/quiz/ManageQuizzes';
 import { DarkModeProvider } from './contexts/DarkMode';
 import UploadFile from './Educator/course/UploadFile';
-import CourseDetails from './CommenPages/CourseDetails';
+import CourseDetails from './CommenPages/CourseDetailsPage/CourseDetails';
 import PasswordReset from './CommenPages/Security/PasswordReset';
 import AttemptQuiz from './StudentPage/QuizAttemptPage';
 import EducatorsPage from "./Admin/EducatorsPage";
 import StudentsPage from "./Admin/StudentsPage";
-import UserDetails from "./Admin/UserDetails";
+import StudentDetails from './Admin/StudentDetails';
+import SearchResultPage from './CommenPages/SearchResultPage';
+import EducatorDetails from './Admin/EducatorDetails';
+import EmailVerification from './CommenPages/Security/EmailVerification';
+import EditProfile from './CommenPages/ProfileComponents/EditProfile';
+import MyCourses from './StudentPage/MyCourses ';
+import PurchaseHistory from './StudentPage/PurchaseHistory';
 
 // Set the base URL for all Axios requests
 axios.defaults.baseURL = 'http://localhost:8080'; // Replace 'http://localhost:8080' with your backend server URL
@@ -33,17 +38,23 @@ function App() {
                 <Router>
                     <Routes>
                         <Route path="/" element={<HomePage />} />
+                        <Route path="/edit-profile" element={<EditProfile />} />
                         <Route path="/login" element={<LoginPage />} />
                         <Route path="/register" element={<RegisterPage />} />
-                        <Route path="/reset-password/:token" element={<PasswordReset />} />
+                        <Route path="/email-verification/:token" element={<EmailVerification />} />
+
                         
+                        <Route path="/reset-password/:token" element={<PasswordReset />} />
+                        <Route path="/search-results" element={<SearchResultPage />} />
+
                         <Route path="/admin" element={<AdminPage />} />
                         <Route path="/admin/educators" element={<EducatorsPage />} />
                         <Route path="/admin/students" element={<StudentsPage />} />
-                        <Route path="/userDetails/:userId" element={<UserDetails />} />
+                        <Route path="/StudentDetails/:userId" element={<StudentDetails />} />
+                        <Route path="/EducatorDetails/:userId" element={<EducatorDetails />} />
+
                         
                         <Route path="/educator" element={<EducatorPage />} />
-                        <Route path="/student" element={<StudentPage />} />
                         <Route path="/profile" element={<ProfilePage />} />
 
                         <Route path="/educator/add-course" element={<AddCourseForm />} />
@@ -57,6 +68,9 @@ function App() {
 
                         <Route path="/coursedetails/:courseId" element={<CourseDetails />} />
                         <Route path="/api/quiz/:quizId/attempt" element={<AttemptQuiz />} />
+                        <Route path="/my-courses" element={<MyCourses />} />
+                        <Route path="/purchase-history" element={<PurchaseHistory />} />
+                    
                     </Routes>
                 </Router>
             </DarkModeProvider>

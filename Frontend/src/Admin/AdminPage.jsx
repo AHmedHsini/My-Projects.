@@ -54,7 +54,7 @@ function AdminPage() {
             </Link>
             <div className="p-6 bg-yellow-500 text-white rounded-lg shadow-md transition duration-300 hover:bg-yellow-600">
               <h2 className="text-2xl font-bold mb-4">Reports</h2>
-              <p className="text-lg">Generate reports</p>
+              <p className="text-lg">View Reports</p>
             </div>
           </div>
           {loading ? (

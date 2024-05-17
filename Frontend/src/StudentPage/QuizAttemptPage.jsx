@@ -1,20 +1,29 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import axios from "axios";
-import "./QuizAttemptPage.css"; // Make sure to update the path if necessary
+import "./QuizAttemptPage.css";
 
 function QuizAttemptPage() {
     const { quizId } = useParams();
     const [quiz, setQuiz] = useState(null);
-    const [answers, setAnswers] = useState({});
+    const [answers, setAnswers] = useState(() => {
+        const savedAnswers = localStorage.getItem(`answers_${quizId}`);
+        return savedAnswers ? JSON.parse(savedAnswers) : {};
+    });
     const [submitting, setSubmitting] = useState(false);
+    const [submitted, setSubmitted] = useState(false);
     const [error, setError] = useState(null);
+    const [score, setScore] = useState(null);
+    const [evaluation, setEvaluation] = useState({});
 
     useEffect(() => {
         const fetchQuizDetails = async () => {
             try {
                 const response = await axios.get(`/api/quiz/${quizId}`);
                 setQuiz(response.data);
+                if (Object.keys(answers).length === 0) {
+                    initAnswers(response.data.questions);
+                }
             } catch (error) {
                 console.error("Failed to fetch quiz details:", error);
                 setError("Failed to load quiz. Please try again later.");
@@ -23,32 +32,66 @@ function QuizAttemptPage() {
         fetchQuizDetails();
     }, [quizId]);
 
-    const handleAnswerChange = (questionId, selectedOption) => {
+    useEffect(() => {
+        const handleBeforeUnload = (event) => {
+            if (submitted) {
+                const message = "You have submitted your quiz. Reloading the page may cause you to lose your results.";
+                event.returnValue = message; // Standard for most browsers
+                return message; // For some older browsers
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [submitted]);
+
+    const initAnswers = (questions) => {
+        const initialAnswers = {};
+        questions.forEach(question => {
+            initialAnswers[question.questionText] = [];
+        });
+        setAnswers(initialAnswers);
+    };
+
+    const handleAnswerChange = (questionId, selectedOption, isChecked) => {
         setAnswers(prevAnswers => ({
             ...prevAnswers,
-            [questionId]: selectedOption,
+            [questionId]: isChecked
+                ? [...prevAnswers[questionId], selectedOption]
+                : prevAnswers[questionId].filter(opt => opt !== selectedOption),
         }));
     };
 
-    const handleSubmit = async () => {
-        if (submitting) return;
+    const evaluateQuiz = () => {
+        const evaluationResult = {};
+        let totalScore = 0;
+        quiz.questions.forEach(question => {
+            const correctAnswers = question.answers.filter(answer => answer.correct).map(answer => answer.text);
+            const userAnswers = answers[question.questionText];
+            const correct = userAnswers && userAnswers.every(answer => correctAnswers.includes(answer));
+            evaluationResult[question.questionText] = {
+                correctAnswers,
+                userAnswers,
+                correct
+            };
+            if (correct) {
+                totalScore += question.mark;
+            }
+        });
+        setScore(totalScore);
+        setEvaluation(evaluationResult);
+        setSubmitted(true);
+    };
 
+    const handleSubmit = async () => {
+        if (submitting || submitted) return;
         setSubmitting(true);
-        try {
-            await axios.post(`/api/quiz/${quizId}/attempt`, {
-                userId: "user_id_here", // Ensure to replace with actual user ID from context or props
-                providedAnswers: Object.entries(answers).map(([questionId, selectedOption]) => ({
-                    questionId,
-                    selectedOption,
-                })),
-            });
-            // Add navigation or success message here
-        } catch (error) {
-            console.error("Failed to submit quiz:", error);
-            setError("Submission failed. Please try again.");
-        } finally {
-            setSubmitting(false);
-        }
+        evaluateQuiz();
+        localStorage.removeItem(`answers_${quizId}`);
+        setSubmitting(false);
     };
 
     if (error) return <div className="error">{error}</div>;
@@ -64,23 +107,54 @@ function QuizAttemptPage() {
                         {question.answers.map(answer => (
                             <li key={answer.text} className="answer-item">
                                 <label className="answer-label">
-                                    <input
-                                        type="radio"
-                                        value={answer.text}
-                                        checked={answers[question.questionText] === answer.text}
-                                        onChange={() => handleAnswerChange(question.questionText, answer.text)}
-                                        className="answer-input"
-                                        aria-label={`Choose ${answer.text}`}
-                                    />
+                                    {question.answers.length === 1 ? (
+                                        <input
+                                            type="radio"
+                                            value={answer.text}
+                                            checked={answers[question.questionText].includes(answer.text)}
+                                            onChange={(e) => handleAnswerChange(question.questionText, answer.text, e.target.checked)}
+                                            className="answer-input"
+                                            disabled={submitted}
+                                            aria-label={`Select ${answer.text}`}
+                                        />
+                                    ) : (
+                                        <input
+                                            type="checkbox"
+                                            value={answer.text}
+                                            checked={answers[question.questionText].includes(answer.text)}
+                                            onChange={(e) => handleAnswerChange(question.questionText, answer.text, e.target.checked)}
+                                            className="answer-input"
+                                            disabled={submitted}
+                                            aria-label={`Select ${answer.text}`}
+                                        />
+                                    )}
                                     {answer.text}
                                 </label>
                             </li>
                         ))}
                     </ul>
+                    {submitted && evaluation[question.questionText] && (
+                        <div className="evaluation">
+                            {evaluation[question.questionText].correct ? (
+                                <p className="correct-answer">Correct!</p>
+                            ) : (
+                                <>
+                                    <p className="incorrect-answer">Incorrect!</p>
+                                    <p className="correct-answer">Correct answer(s): {evaluation[question.questionText].correctAnswers.join(", ")}</p>
+                                </>
+                            )}
+                        </div>
+                    )}
                 </div>
             ))}
-            <button onClick={handleSubmit} disabled={submitting} className="submit-button">
-                {submitting ? "Submitting..." : "Submit"}
+            {submitted && (
+                <div className="score-container">
+                    <p>Your score: {score} out of {quiz.questions.reduce((total, question) => total + question.mark, 0)}</p>
+                </div>
+            )}
+            <Link to={`/coursedetails/${quiz.courseId}`} className="back-button">Back to Course</Link>
+            <button onClick={handleSubmit} disabled={submitting || submitted} className="submit-button">
+                {submitting ? "Submitting..." : submitted ? "Submitted" : "Submit"}
             </button>
         </div>
     );

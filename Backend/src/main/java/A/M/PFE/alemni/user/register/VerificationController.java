@@ -15,14 +15,11 @@ public class VerificationController {
     @Autowired
     private VerificationService verificationService;
 
-    @GetMapping
+    @GetMapping("/verify")
     public ResponseEntity<String> verifyUser(@RequestParam("token") String token) {
-        // Use VerificationService to verify the user
-        boolean isVerified = verificationService.verifyUser(token);
 
-        // Return a message based on the verification result
-        if (isVerified) {
-            return ResponseEntity.ok("User verified successfully.");
+        if (verificationService.verifyUser(token)) {
+            return ResponseEntity.ok("Verification token is valid.");
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Invalid or expired verification token.");

@@ -21,23 +21,24 @@ public class QuizService {
         // Save the quiz to the database
         Quiz savedQuiz = quizRepository.save(quiz);
 
-        // Find the course by courseId
-        Optional<Cours> optionalCours = coursRepository.findById(quiz.getCourseId());
+        // Iterate through each question in the quiz
+        for (Question question : savedQuiz.getQuestions()) {
+            // Find the correct answer for the question
+            Answer correctAnswer = question.getAnswers().stream()
+                    .filter(Answer::isCorrect)
+                    .findFirst()
+                    .orElse(null);
 
-        if (optionalCours.isPresent()) {
-            Cours course = optionalCours.get();
-
-            // Add the quiz to the course
-            course.getQuizzes().add(savedQuiz);
-
-            // Save the updated course
-            coursRepository.save(course);
-        } else {
-            throw new RuntimeException("Course with ID " + quiz.getCourseId() + " not found");
+            // If a correct answer is found, update the question's list of answers
+            if (correctAnswer != null) {
+                question.getAnswers().removeIf(answer -> !answer.equals(correctAnswer)); // Remove incorrect answers
+            }
         }
 
+        // Return the saved quiz
         return savedQuiz;
     }
+
 
     public Optional<Quiz> getQuizById(String id) {
         // Retrieve a quiz by its ID
@@ -73,24 +74,34 @@ public class QuizService {
             quizRepository.deleteById(quiz.getId());
         }
     }
-
-    //quiz marking
     public QuizAttempt attemptQuiz(String quizId, String userId, List<Answer> providedAnswers) {
         Optional<Quiz> optionalQuiz = quizRepository.findById(quizId);
-        if (!optionalQuiz.isPresent()) {
+        if (optionalQuiz.isPresent()) {
+            Quiz quiz = optionalQuiz.get();
+            List<Question> questions = quiz.getQuestions();
+            int totalScore = 0;
+
+            // Iterate through each question and evaluate the answers
+            for (int i = 0; i < questions.size(); i++) {
+                Question question = questions.get(i);
+                Answer correctAnswer = question.getAnswers().stream()
+                        .filter(Answer::isCorrect)
+                        .findFirst()
+                        .orElse(null);
+
+                if (correctAnswer != null) {
+                    Answer providedAnswer = providedAnswers.get(i);
+                    if (providedAnswer != null && providedAnswer.equals(correctAnswer)) {
+                        totalScore += question.getMark(); // Increment score for correct answer
+                    }
+                }
+            }
+
+            // Create a new QuizAttempt object with the calculated score
+            QuizAttempt quizAttempt = new QuizAttempt(quizId, userId, providedAnswers, totalScore);
+            return quizAttempt;
+        } else {
             throw new RuntimeException("Quiz with ID " + quizId + " not found");
         }
-
-        Quiz quiz = optionalQuiz.get();
-        int score = quiz.calculateScore(providedAnswers);
-
-        QuizAttempt quizAttempt = new QuizAttempt();
-        quizAttempt.setQuizId(quizId);
-        quizAttempt.setUserId(userId);
-        quizAttempt.setProvidedAnswers(providedAnswers);
-        quizAttempt.setScore(score);
-
-        return quizAttempt;
     }
-
 }

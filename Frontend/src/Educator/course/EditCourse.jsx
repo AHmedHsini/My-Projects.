@@ -4,15 +4,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../contexts/AuthContext';
 import NavBar from '../../components/EducatorComponents/EducatorNavBar';
-
+import { FaPen } from 'react-icons/fa';
 
 function EditCourse() {
-    // Retrieve courseId from URL parameters and user context
     const { courseId } = useParams();
     const { user } = useAuth();
     const navigate = useNavigate();
 
-    // State variables to hold course details and loading status
     const [title, setTitle] = useState('');
     const [price, setPrice] = useState('');
     const [category, setCategory] = useState('');
@@ -21,11 +19,9 @@ function EditCourse() {
     const [courseImageUrl, setCourseImageUrl] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Fetch course details on component mount
     useEffect(() => {
         const fetchCourse = async () => {
             try {
-                // Make a GET request to fetch course details
                 const response = await axios.get(`/api/Courses/${courseId}`, {
                     headers: {
                         Authorization: `Bearer ${user.token}`,
@@ -48,12 +44,10 @@ function EditCourse() {
         fetchCourse();
     }, [courseId, user]);
 
-    // Handle course update form submission
     const handleUpdateCourse = async (e) => {
         e.preventDefault();
         const formData = new FormData();
 
-        // Create an object with the course data
         const coursData = {
             id: courseId,
             title,
@@ -62,19 +56,15 @@ function EditCourse() {
             description,
         };
 
-        // Add the course data as a JSON string to the FormData object
         formData.append('cours', JSON.stringify(coursData));
 
-        // Add the course image file if provided
         if (courseImage) {
             formData.append('file', courseImage);
         }
 
-        // Pass only the educator's ID
         formData.append('educator', user.id);
 
         try {
-            // Send the PUT request to update the course
             await axios.put(`/api/Courses`, formData, {
                 headers: {
                     Authorization: `Bearer ${user.token}`,
@@ -88,27 +78,42 @@ function EditCourse() {
         }
     };
 
-
-    // Handle course image file change
     const handleImageChange = (e) => {
         const selectedFile = e.target.files[0];
-        setCourseImage(selectedFile);
-        setCourseImageUrl(URL.createObjectURL(selectedFile));
+        if (selectedFile) {
+            setCourseImage(selectedFile);
+            setCourseImageUrl(URL.createObjectURL(selectedFile));
+        }
     };
 
-    // Display loading spinner while fetching course details
     if (isLoading) {
         return <div>Loading...</div>;
     }
 
-    // Render the EditCourse form
     return (
         <div>
             <NavBar />
             <div className="container mx-auto p-4">
                 <h1 className="text-2xl font-bold mb-4">Edit Course</h1>
-                <form onSubmit={handleUpdateCourse}>
-                    <div className="mb-4">
+                <form onSubmit={handleUpdateCourse} className="w-full">
+                    <div className="mb-4 text-center relative w-full">
+                        {courseImageUrl && (
+                            <div className="relative inline-block w-full">
+                                <img src={courseImageUrl} alt="Course" className="mt-2 w-full mx-auto rounded" />
+                                <label htmlFor="courseImage" className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity cursor-pointer rounded">
+                                    <FaPen className="text-white text-2xl" />
+                                </label>
+                                <input
+                                    type="file"
+                                    id="courseImage"
+                                    accept="image/*"
+                                    onChange={handleImageChange}
+                                    className="hidden"
+                                />
+                            </div>
+                        )}
+                    </div>
+                    <div className="mb-4 w-full">
                         <label htmlFor="title" className="block font-medium mb-2">Title:</label>
                         <input
                             type="text"
@@ -118,7 +123,7 @@ function EditCourse() {
                             className="w-full p-2 border rounded"
                         />
                     </div>
-                    <div className="mb-4">
+                    <div className="mb-4 w-full">
                         <label htmlFor="price" className="block font-medium mb-2">Price:</label>
                         <input
                             type="number"
@@ -128,7 +133,7 @@ function EditCourse() {
                             className="w-full p-2 border rounded"
                         />
                     </div>
-                    <div className="mb-4">
+                    <div className="mb-4 w-full">
                         <label htmlFor="category" className="block font-medium mb-2">Category:</label>
                         <input
                             type="text"
@@ -138,19 +143,7 @@ function EditCourse() {
                             className="w-full p-2 border rounded"
                         />
                     </div>
-                    <div className="mb-4">
-                        <label htmlFor="courseImage" className="block font-medium mb-2">Course Image:</label>
-                        <input
-                            type="file"
-                            id="courseImage"
-                            onChange={handleImageChange}
-                            className="w-full p-2 border rounded"
-                        />
-                        {courseImageUrl && (
-                            <img src={courseImageUrl} alt="Course" className="mt-2 w-32" />
-                        )}
-                    </div>
-                    <div className="mb-4">
+                    <div className="mb-4 w-full">
                         <label htmlFor="description" className="block font-medium mb-2">Description:</label>
                         <textarea
                             id="description"
@@ -160,8 +153,7 @@ function EditCourse() {
                             rows="4"
                         />
                     </div>
-
-                    <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded">Update Course</button>
+                    <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded w-full">Update Course</button>
                 </form>
             </div>
         </div>

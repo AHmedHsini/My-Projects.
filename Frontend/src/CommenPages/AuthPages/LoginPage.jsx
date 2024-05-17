@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import Header from '../Header'; // Import the Header component
+import Header from '../headerComponents/Header'; // Import the Header component
 
 function LoginPage() {
     const [email, setEmail] = useState('');

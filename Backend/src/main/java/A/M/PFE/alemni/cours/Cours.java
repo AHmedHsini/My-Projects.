@@ -1,6 +1,7 @@
 package A.M.PFE.alemni.cours;
 
 import A.M.PFE.alemni.comment.Comment;
+import A.M.PFE.alemni.rating.Rating;
 import A.M.PFE.alemni.cours.quiz.Quiz;
 
 import lombok.*;
@@ -25,18 +26,21 @@ public class Cours {
     private String title;
     private String description;
     private double price;
-    private double rating;
+    private double rating = 0.0;
     private List<String> category;
     private String courseImage; // URL to the course's main image
     private List<Media> media = new ArrayList<>(); // List to store different media types
     @DocumentReference
-    private List<Comment> commentIds = new ArrayList<>() ;
+    private List<Comment> commentIds ;
+    private List<Rating> ratings = new ArrayList<>();
     @DocumentReference
-    private List<Quiz> quizzes = new ArrayList<>() ;
+    private List<Quiz> quizzes  ;
     private String educatorName; // Store the name of the educator who created the course
     private String educatorId;
     @CreatedDate
     private LocalDateTime creationDate;
     @LastModifiedDate
     private LocalDateTime lastModifiedDate;
+
+
 }

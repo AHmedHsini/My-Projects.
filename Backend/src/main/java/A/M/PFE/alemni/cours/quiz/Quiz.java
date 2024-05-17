@@ -23,24 +23,7 @@ public class Quiz {
     @LastModifiedDate
     private LocalDateTime lastModifiedDate;
 
-    // Method to calculate the score based on provided answers
-    public int calculateScore(List<Answer> providedAnswers) {
-        int totalScore = 0;
+   
 
-        // Iterate through the questions and provided answers
-        for (int i = 0; i < questions.size(); i++) {
-            Question question = questions.get(i);
-            Answer providedAnswer = providedAnswers.get(i);
-
-            // Check if the provided answer is correct
-            for (Answer correctAnswer : question.getAnswers()) {
-                if (correctAnswer.equals(providedAnswer) && correctAnswer.isCorrect()) {
-                    totalScore += question.getMark(); // Add the question's mark to the total score
-                    break;
-                }
-            }
-        }
-        return totalScore;
-    }
 }
 

@@ -30,7 +30,9 @@ public class UserController {
     private JwtUtils jwtUtils;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
     private final UserService userService;
+    @Autowired
     private FileStorageService fileStorageService;
 
     public UserController(UserService userService) {
@@ -75,6 +77,7 @@ public class UserController {
             response.put("firstName", user.getFirstName());
             response.put("lastName", user.getLastName());
             response.put("id", String.valueOf(user.getId()));
+            response.put("profilePicture", user.getProfilePicture());
             return ResponseEntity.ok(response);
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Invalid email or password!"));
@@ -104,18 +107,41 @@ public class UserController {
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired token");
     }
-    @PostMapping("/{id}/uploadProfilePicture")
-    public ResponseEntity<?> uploadProfilePicture(@PathVariable String id, @RequestParam("file") MultipartFile file) {
+    @PostMapping("/user/{id}/updateProfile")
+    @CrossOrigin(origins = "http://localhost:5173")
+    public ResponseEntity<?> updateProfile(
+            @PathVariable String id,
+            @RequestParam("firstName") String firstName,
+            @RequestParam("lastName") String lastName,
+            @RequestParam("email") String email,
+            @RequestParam(value = "profilePicture", required = false) MultipartFile profilePicture
+    ) {
         try {
-            // Save the profile picture using the file storage service
-            String filePath = fileStorageService.store(file, CourseMediaType.IMAGE);
+            String profilePicturePath = null;
+            if (profilePicture != null && !profilePicture.isEmpty()) {
+                profilePicturePath = fileStorageService.store(profilePicture, CourseMediaType.IMAGE);
+            }
 
-            // Update the user's profile picture URL
-            userService.updateUserProfilePicture(id, filePath);
+            // Update the user profile
+            userService.updateUserProfile(id, firstName, lastName, email, profilePicturePath);
 
-            return ResponseEntity.ok().body("Profile picture uploaded successfully.");
+            Optional<User> optionalUser = userRepository.findById(id);
+            if (optionalUser.isPresent()) {
+                User updatedUser = optionalUser.get();
+                UserResponse userResponse = new UserResponse(
+                        updatedUser.getId(),
+                        updatedUser.getEmail(),
+                        updatedUser.getRole(),
+                        updatedUser.getFirstName(),
+                        updatedUser.getLastName(),
+                        updatedUser.getProfilePicture()
+                );
+                return ResponseEntity.ok().body(userResponse);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            }
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Failed to upload profile picture.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update profile");
         }
     }
     @PostMapping("/refresh-token")

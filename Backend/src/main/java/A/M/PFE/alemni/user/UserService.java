@@ -71,15 +71,22 @@ public class UserService {
     }
 
 
-    //pfp
-    public void updateUserProfilePicture(String id, String profilePicturePath) {
+    public void updateUserProfile(String id, String firstName, String lastName, String email, String profilePicturePath) {
         Optional<User> optionalUser = userRepository.findById(id);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
-            user.setProfilePicture(profilePicturePath);
+            user.setFirstName(firstName);
+            user.setLastName(lastName);
+            user.setEmail(email);
+            if (profilePicturePath != null) {
+                user.setProfilePicture(profilePicturePath);
+            }
             userRepository.save(user);
+        } else {
+            throw new NotFoundException("User not found with id: " + id);
         }
     }
+
     //card
     public boolean hasCardInformation(String userId) {
         return userRepository.findById(userId).map(User::getCardNumber).isPresent();

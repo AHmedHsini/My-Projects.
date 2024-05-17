@@ -4,6 +4,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../contexts/AuthContext'; // Import useAuth hook
 import QuizUpdateForm from './QuizUpdateForm'; // Import the QuizUpdateForm component
+import NavBar from '../../components/EducatorComponents/EducatorNavBar';
+
 
 function ManageQuizzes() {
     const { courseId } = useParams();
@@ -57,6 +59,8 @@ function ManageQuizzes() {
     };
 
     return (
+        <div>
+            <NavBar />
         <div className="max-w-lg mx-auto">
             <h2 className="text-2xl font-bold mb-4">Manage Quizzes</h2>
             {/* Add Quiz button */}
@@ -112,6 +116,7 @@ function ManageQuizzes() {
                     onCancel={() => setEditingQuiz(null)} // Close the update form
                 />
             )}
+        </div>
         </div>
     );
 }

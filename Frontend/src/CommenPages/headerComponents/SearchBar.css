@@ -1,0 +1,88 @@
+.search-bar-container {
+  position: relative;
+  width: 60%; /* Ensure full width */
+}
+
+.search-input-container {
+  position: relative;
+  width: 100%; /* Ensure full width */
+  margin-left: 10% ;
+}
+
+.search-input {
+  padding: 15px;
+  border-radius: 20px;
+  border: 2px solid #d1d5db;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 80%; /* Reduce width to 80% */
+  max-width: 800px; /* Set a maximum width for the search input */
+  font-size: 16px;
+  padding-right: 40px;
+  outline: none; /* Remove the blue outline on focus */
+  box-sizing: border-box; /* Ensure padding and border are included in the width */
+}
+
+.clear-button {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  background-color: white;
+  color: #007bff;
+  border: none;
+  padding: 10px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.clear-button:hover {
+  background-color: #0070b7;
+}
+
+.suggestions-container {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 999;
+  background-color: #fff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  width: 100%; /* Ensure full width */
+  padding: 15px;
+  overflow-y: auto;
+  max-height: 400px;
+}
+
+.suggestion-item {
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.suggestion-item img {
+  margin-right: 20px;
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.suggestion-item h3 {
+  margin-bottom: 5px;
+  font-size: 20px;
+}
+
+.suggestion-item p {
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+.suggestion-item .price-free {
+  color: green;
+}
+
+.suggestion-item .price-paid {
+  color: blue;
+}

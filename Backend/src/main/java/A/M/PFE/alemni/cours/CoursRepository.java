@@ -14,4 +14,6 @@ public interface CoursRepository extends MongoRepository<Cours, String> {
     List<Cours> findByCategory(String category);
 
     Optional<Cours> findById(String courseId);
+    List<Cours> findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(String title, String description);
+
 }

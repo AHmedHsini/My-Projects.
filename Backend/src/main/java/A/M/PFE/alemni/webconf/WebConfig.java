@@ -1,4 +1,4 @@
-package com.example.webconf;
+package A.M.PFE.alemni.webconf;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
