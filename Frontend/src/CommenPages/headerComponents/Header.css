@@ -42,7 +42,7 @@
 
 .nav-list {
   display: flex;
-  gap: 35px; /* equivalent to space-x-4 */
+  gap: 15px; /* equivalent to space-x-4 */
   align-items: center;
 }
 
@@ -158,12 +158,31 @@
 
 .login-link,
 .signup-link {
-  color: #4a4a4a; /* equivalent to text-gray-700 */
+  display: inline-block;
+  padding: 8px 16px; /* equivalent to px-4 py-2 */
+  border-radius: 4px; /* equivalent to rounded */
+  font-size: 14px; /* equivalent to text-sm */
+  font-weight: 600; /* equivalent to font-semibold */
+  text-align: center;
+  border: 1px solid black;
 }
 
-.login-link:hover,
+.login-link {
+  background-color: #f7fafc; /* equivalent to bg-gray-100 */
+  color: #333; /* equivalent to text-black */
+}
+
+.signup-link {
+  background-color: #333; /* equivalent to bg-black */
+  color: #fff; /* equivalent to text-white */
+}
+
+.login-link:hover {
+  background-color: #e2e8f0; /* equivalent to hover:bg-gray-200 */
+}
+
 .signup-link:hover {
-  color: #667eea; /* equivalent to hover:text-indigo-500 */
+  background-color: #4a4a4a; /* equivalent to hover:bg-gray-800 */
 }
 
 .search-bar-container {
@@ -209,4 +228,44 @@
   .search-icon-container {
     display: none; /* Hide the search icon on larger screens */
   }
+}
+
+.login-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.login-popup {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  position: relative;
+  width: 400px;
+  max-width: 90%;
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap');
+
+.logo-text {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
 }

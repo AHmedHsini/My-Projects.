@@ -1,7 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { VideoList, VideoListItem } from '../StyledComponents';
 
-const VideoSection = ({ files }) => {
+const VideoSection = ({ files, userOwnsCourse }) => {
+    const navigate = useNavigate();
+
     if (!files || !Array.isArray(files.VIDEO)) {
         return <div>No videos available.</div>;
     }
@@ -13,21 +16,30 @@ const VideoSection = ({ files }) => {
                 {files.VIDEO.map((video, index) => (
                     <VideoListItem
                         key={video.id ?? index}
-                        className="flex items-center mb-4"
+                        className={`flex items-center mb-4 ${!userOwnsCourse ? 'disabled' : ''}`}
+                        onClick={() => {
+                            if (userOwnsCourse) {
+                                navigate(`/video/${video.id}`);
+                            }
+                        }}
                     >
                         <div className="w-36 h-24 relative rounded-lg overflow-hidden mr-4">
                             <video
                                 src={video.url}
                                 className="w-full h-full object-cover"
                                 onMouseEnter={(e) => {
-                                    e.target.currentTime = 0;
-                                    e.target.play().catch((error) => {
-                                        console.error("Failed to play video", error);
-                                    });
+                                    if (userOwnsCourse) {
+                                        e.target.currentTime = 0;
+                                        e.target.play().catch((error) => {
+                                            console.error("Failed to play video", error);
+                                        });
+                                    }
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.target.pause();
-                                    e.target.currentTime = 0;
+                                    if (userOwnsCourse) {
+                                        e.target.pause();
+                                        e.target.currentTime = 0;
+                                    }
                                 }}
                                 loop
                             />

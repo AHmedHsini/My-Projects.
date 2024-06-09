@@ -7,6 +7,6 @@ import java.util.List;
 
 @Repository
 public interface CommentRepository extends MongoRepository<Comment, String> {
-
     List<Comment> findAllByCourseId(String courseId);
+    List<Comment> findAllByVideoId(String videoId);
 }

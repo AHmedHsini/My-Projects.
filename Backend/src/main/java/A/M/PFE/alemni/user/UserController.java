@@ -1,10 +1,9 @@
 package A.M.PFE.alemni.user;
 
+import A.M.PFE.alemni.activity.UserActivityService;
 import A.M.PFE.alemni.cours.CourseMediaType;
 import A.M.PFE.alemni.cours.FileStorageService;
-import A.M.PFE.alemni.email.EmailService;
 import A.M.PFE.alemni.user.Security.JwtUtils;
-import A.M.PFE.alemni.user.Security.PasswordResetService;
 import A.M.PFE.alemni.user.login.LoginRequest;
 import A.M.PFE.alemni.user.model.CardInfoRequest;
 import A.M.PFE.alemni.user.model.User;
@@ -14,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -34,6 +32,8 @@ public class UserController {
     private final UserService userService;
     @Autowired
     private FileStorageService fileStorageService;
+    @Autowired
+    private UserActivityService userActivityService;
 
     public UserController(UserService userService) {
         this.userService = userService;
@@ -41,7 +41,6 @@ public class UserController {
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    @CrossOrigin(origins = "http://localhost:5173")
     public ResponseEntity<Map<String, String>> createUser(@RequestBody User user) {
         try {
             userService.registerUser(user);
@@ -49,6 +48,10 @@ public class UserController {
             Map<String, String> response = new HashMap<>();
             response.put("message", "User registered successfully. Please verify your email to complete registration.");
             response.put("token", token);
+
+            // Log registration activity
+            userActivityService.logActivity(user.getId(), "register");
+
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (MessagingException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -78,6 +81,10 @@ public class UserController {
             response.put("lastName", user.getLastName());
             response.put("id", String.valueOf(user.getId()));
             response.put("profilePicture", user.getProfilePicture());
+
+            // Log visit activity
+            userActivityService.logActivity(user.getId(), "visit");
+
             return ResponseEntity.ok(response);
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Invalid email or password!"));

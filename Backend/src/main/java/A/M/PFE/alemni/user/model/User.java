@@ -6,11 +6,14 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -38,12 +41,12 @@ public class User {
     private String cvv;
 
     private List<PurchasedCourse> purchasedCourses = new ArrayList<>();
-    
 
     // Generate verification token
     public void generateVerificationToken() {
         this.verificationToken = UUID.randomUUID().toString();
     }
+
     public void generateResetToken() {
         this.resetToken = UUID.randomUUID().toString();
         this.resetTokenExpiration = LocalDateTime.now().plusHours(24); // Token expiration after 24 hours
@@ -52,5 +55,10 @@ public class User {
     // Check if user has Educator role
     public boolean isEducator() {
         return this.role == Role.Educator;
+    }
+
+    // Return user authorities
+    public List<SimpleGrantedAuthority> getAuthorities() {
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + this.role.name()));
     }
 }

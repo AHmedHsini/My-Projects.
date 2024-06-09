@@ -1,48 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FaSave } from 'react-icons/fa';
+import { FaSave, FaUpload } from 'react-icons/fa';
 import Select from 'react-select';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import NavBar from '../../components/EducatorComponents/EducatorNavBar';
-import { useAuth } from '../../contexts/AuthContext'; // Import useAuth from your AuthProvider file
+import { useDropzone } from 'react-dropzone';
+import { useAuth } from '../../contexts/AuthContext';
 
-function AddCourseForm() {
-    const location = useLocation();
-    const navigate = useNavigate();
-    const { user } = useAuth(); // Access user using useAuth
+function AddCourseModal({ isOpen, onClose, refreshCourses, isDarkMode }) {
+    const { user } = useAuth();
 
-    // Get refreshCourses from location state or use a no-op function
-    const { refreshCourses = () => { } } = location.state || {};
-
-    // Initialize course data state
     const [courseData, setCourseData] = useState({
         title: '',
         description: '',
         price: '',
-        category: [],
+        categories: [],
     });
 
-    // Initialize course image state and image preview state
     const [courseImage, setCourseImage] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+    const [categoryOptions, setCategoryOptions] = useState([]);
 
-    // Define category options for the select input
-    const categoryOptions = [
-        { value: 'DEVELOPMENT', label: 'Development' },
-        { value: 'BUSINESS', label: 'Business' },
-        { value: 'IT_AND_SOFTWARE', label: 'IT and Software' },
-        { value: 'OFFICE_PRODUCTIVITY', label: 'Office Productivity' },
-        { value: 'PERSONAL_DEVELOPMENT', label: 'Personal Development' },
-        { value: 'DESIGN', label: 'Design' },
-        { value: 'MARKETING', label: 'Marketing' },
-        { value: 'LIFESTYLE', label: 'Lifestyle' },
-        { value: 'PHOTOGRAPHY_AND_VIDEO', label: 'Photography and Video' },
-        { value: 'HEALTH_AND_FITNESS', label: 'Health and Fitness' },
-        { value: 'TEACHING_AND_ACADEMICS', label: 'Teaching and Academics' },
-    ];
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const response = await axios.get('/api/categories');
+                const options = response.data.map(category => ({
+                    value: category.id,
+                    label: category.name,
+                }));
+                setCategoryOptions(options);
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+                toast.error('Failed to load categories.');
+            }
+        };
 
-    // Handle input changes for the form fields
+        fetchCategories();
+    }, []);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setCourseData({
@@ -51,51 +46,66 @@ function AddCourseForm() {
         });
     };
 
-    // Handle category selection changes
     const handleCategoryChange = (selectedOptions) => {
         setCourseData({
             ...courseData,
-            category: selectedOptions.map(option => option.value),
+            categories: selectedOptions.map(option => option.value),
         });
     };
 
-    // Handle image file selection and create an image preview URL
-    const handleImageChange = (e) => {
-        const selectedFile = e.target.files[0];
-        setCourseImage(selectedFile);
+    const onDrop = (acceptedFiles, fileRejections) => {
+        if (fileRejections.length > 0) {
+            fileRejections.forEach((file) => {
+                file.errors.forEach((err) => {
+                    if (err.code === 'file-invalid-type') {
+                        toast.error(`${file.file.name} is not a valid image file`);
+                    }
+                });
+            });
+            return;
+        }
 
-        if (selectedFile) {
-            const imageUrl = URL.createObjectURL(selectedFile);
+        const file = acceptedFiles[0];
+        setCourseImage(file);
+
+        if (file) {
+            const imageUrl = URL.createObjectURL(file);
             setImagePreview(imageUrl);
         }
     };
 
-    // Handle form submission
+    const { getRootProps, getInputProps } = useDropzone({
+        onDrop,
+        accept: {
+            'image/jpeg': [],
+            'image/png': [],
+            'image/gif': [],
+        },
+        maxFiles: 1,
+    });
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Validate required form data
         if (!courseData.title || !courseData.description || !courseData.price) {
             toast.error('Please fill out all required fields.');
             return;
         }
 
-        // Create FormData object and append course data and image file
         const formData = new FormData();
         formData.append('title', courseData.title);
         formData.append('description', courseData.description);
         formData.append('price', courseData.price);
-        formData.append('category', courseData.category.join(','));
-        formData.append('type', 'IMAGE'); // Include the 'type' parameter
+        formData.append('categoryIds', courseData.categories.join(','));
+        formData.append('type', 'IMAGE');
 
-        // Append the selected course image file
         if (courseImage) {
             formData.append('file', courseImage);
         }
 
         try {
             const response = await axios.post(
-                `/api/Courses?educator=${user.id}`, // Use user from useAuth
+                `/api/Courses?educator=${user.id}`,
                 formData,
                 {
                     headers: {
@@ -104,11 +114,10 @@ function AddCourseForm() {
                 }
             );
 
-            // If the response is successful, refresh courses and navigate
             if (response.status === 201) {
                 refreshCourses();
                 toast.success('Course added successfully!');
-                navigate('/educator');
+                onClose();
             } else {
                 throw new Error('Failed to add course.');
             }
@@ -118,16 +127,51 @@ function AddCourseForm() {
         }
     };
 
+    if (!isOpen) return null;
 
-    // Render the form
+    const modalBgColor = isDarkMode ? 'bg-[#253237]' : 'bg-white';
+    const modalTextColor = isDarkMode ? 'text-[#CAD2C5]' : 'text-gray-800';
+    const inputBgColor = isDarkMode ? 'bg-[#1A2D34] text-white' : 'bg-white text-gray-800';
+    const inputBorderColor = isDarkMode ? 'border-gray-700' : 'border-gray-300';
+
+    const customStyles = {
+        control: (provided) => ({
+            ...provided,
+            backgroundColor: isDarkMode ? '#1A2D34' : 'white',
+            borderColor: isDarkMode ? 'gray' : '#d1d1d1',
+            color: isDarkMode ? '#CAD2C5' : '#333',
+        }),
+        singleValue: (provided) => ({
+            ...provided,
+            color: isDarkMode ? '#CAD2C5' : '#333',
+        }),
+        menu: (provided) => ({
+            ...provided,
+            backgroundColor: isDarkMode ? '#1A2D34' : 'white',
+        }),
+        option: (provided, state) => ({
+            ...provided,
+            backgroundColor: state.isSelected
+                ? isDarkMode
+                    ? '#253237'
+                    : '#ddd'
+                : state.isFocused
+                ? isDarkMode
+                    ? '#2a3b45'
+                    : '#eee'
+                : isDarkMode
+                ? '#1A2D34'
+                : 'white',
+            color: isDarkMode ? '#CAD2C5' : '#333',
+        }),
+    };
+
     return (
-        <div>
-            <NavBar />
-            <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-teal-500 to-blue-600 p-8">
-                <form onSubmit={handleSubmit} className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
-                    <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">Add a Course</h1>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
+            <div className={`w-full max-w-md p-8 rounded-lg shadow-lg ${modalBgColor}`}>
+                <h1 className={`text-3xl font-bold text-center mb-8 ${modalTextColor}`}>Add a Course</h1>
 
-                    {/* Course title input */}
+                <form onSubmit={handleSubmit} className="space-y-4">
                     <input
                         type="text"
                         name="title"
@@ -135,20 +179,18 @@ function AddCourseForm() {
                         value={courseData.title}
                         onChange={handleChange}
                         required
-                        className="w-full p-2 mb-4 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                        className={`w-full p-2 border rounded focus:outline-none focus:ring focus:border-blue-300 ${inputBgColor} ${inputBorderColor}`}
                     />
 
-                    {/* Course description textarea */}
                     <textarea
                         name="description"
                         placeholder="Course Description"
                         value={courseData.description}
                         onChange={handleChange}
                         required
-                        className="w-full p-2 mb-4 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                        className={`w-full p-2 border rounded focus:outline-none focus:ring focus:border-blue-300 ${inputBgColor} ${inputBorderColor}`}
                     />
 
-                    {/* Course price input */}
                     <input
                         type="number"
                         name="price"
@@ -156,51 +198,54 @@ function AddCourseForm() {
                         value={courseData.price}
                         onChange={handleChange}
                         required
-                        className="w-full p-2 mb-4 border rounded focus:outline-none focus:ring focus:border-blue-300"
+                        className={`w-full p-2 border rounded focus:outline-none focus:ring focus:border-blue-300 ${inputBgColor} ${inputBorderColor}`}
                     />
 
-                    {/* Course category select input */}
-                    <div className="mb-4">
-                        <label className="block text-gray-800 mb-2">Course Category:</label>
+                    <div>
+                        <label className={`block mb-2 ${modalTextColor}`}>Course Category:</label>
                         <Select
                             isMulti
-                            name="category"
+                            name="categories"
                             options={categoryOptions}
-                            value={categoryOptions.filter(option => courseData.category.includes(option.value))}
+                            value={categoryOptions.filter(option => courseData.categories.includes(option.value))}
                             onChange={handleCategoryChange}
+                            styles={customStyles}
                             className="w-full"
                         />
                     </div>
 
-                    {/* Course image input */}
                     <div className="mb-4">
-                        <label className="block text-gray-800 mb-2" htmlFor="image">Course Image:</label>
-                        <input
-                            type="file"
-                            id="image"
-                            name="image"
-                            accept="image/*"
-                            onChange={handleImageChange}
-                            className="w-full p-2 border rounded focus:outline-none focus:ring focus:border-blue-300"
-                        />
-                        {imagePreview && (
-                            <div className="mt-2">
+                        <label className={`block mb-2 ${modalTextColor}`}>Course Image:</label>
+                        <div {...getRootProps()} className={`border-dashed border-2 p-4 text-center cursor-pointer ${inputBorderColor} ${inputBgColor}`}>
+                            <input {...getInputProps()} />
+                            {imagePreview ? (
                                 <img src={imagePreview} alt="Course Preview" className="w-full h-auto" />
-                            </div>
-                        )}
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-full">
+                                    <FaUpload className="text-4xl mb-2" />
+                                    <p>Drag & drop an image here, or click to select one</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Submit button */}
                     <button
                         type="submit"
-                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center"
+                        className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center"
                     >
                         <FaSave className="mr-2" /> Add Course
                     </button>
                 </form>
+
+                <button
+                    onClick={onClose}
+                    className="mt-4 w-full px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                >
+                    Close
+                </button>
             </div>
         </div>
     );
 }
 
-export default AddCourseForm;
+export default AddCourseModal;

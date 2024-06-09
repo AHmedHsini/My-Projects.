@@ -1,6 +1,7 @@
 package A.M.PFE.alemni.cours;
 
 import A.M.PFE.alemni.comment.Comment;
+import A.M.PFE.alemni.cours.category.Category;
 import A.M.PFE.alemni.rating.Rating;
 import A.M.PFE.alemni.cours.quiz.Quiz;
 
@@ -15,6 +16,7 @@ import org.springframework.data.mongodb.core.mapping.DocumentReference;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Document(collection = "cours")
 @AllArgsConstructor
@@ -27,7 +29,8 @@ public class Cours {
     private String description;
     private double price;
     private double rating = 0.0;
-    private List<String> category;
+    @DocumentReference
+    private List<Category> categories = new ArrayList<>();
     private String courseImage; // URL to the course's main image
     private List<Media> media = new ArrayList<>(); // List to store different media types
     @DocumentReference
@@ -41,6 +44,12 @@ public class Cours {
     private LocalDateTime creationDate;
     @LastModifiedDate
     private LocalDateTime lastModifiedDate;
+    private int visitCount = 0; // New field to track visits
+    private int purchaseCount = 0; // New field to track purchases
 
-
+    public List<String> getCategoryIds() {
+        return categories.stream().map(Category::getId).collect(Collectors.toList());
+    }
 }
+
+

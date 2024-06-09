@@ -4,7 +4,7 @@ import { FaStar } from 'react-icons/fa';
 import { useAuth } from '../../../contexts/AuthContext';
 import { RatingContainer } from '../StyledComponents'; // import the new styled component
 
-const RatingComponent = ({ courseId, currentRating }) => {
+const RatingComponent = ({ courseId, currentRating, userOwnsCourse }) => {
     const { user } = useAuth();
     const [rating, setRating] = useState(currentRating);
     const [hover, setHover] = useState(null);
@@ -59,6 +59,10 @@ const RatingComponent = ({ courseId, currentRating }) => {
         }
     };
 
+    if (!userOwnsCourse || submitted) {
+        return null; // Don't render the rating component if the user doesn't own the course or has already submitted a rating
+    }
+
     return (
         <RatingContainer className="rating-component">
             <h3 className="text-xl font-bold mb-4">Rate this Course</h3>
@@ -69,10 +73,10 @@ const RatingComponent = ({ courseId, currentRating }) => {
                         <FaStar
                             key={index}
                             size={30}
-                            style={{ cursor: submitted ? 'default' : 'pointer', color: ratingValue <= (hover || ratingToConfirm || rating) ? '#FFD700' : '#e4e5e9' }}
-                            onMouseEnter={() => !submitted && setHover(ratingValue)}
-                            onMouseLeave={() => !submitted && setHover(null)}
-                            onClick={() => !submitted && handleStarClick(ratingValue)}
+                            style={{ cursor: 'pointer', color: ratingValue <= (hover || ratingToConfirm || rating) ? '#FFD700' : '#e4e5e9' }}
+                            onMouseEnter={() => setHover(ratingValue)}
+                            onMouseLeave={() => setHover(null)}
+                            onClick={() => handleStarClick(ratingValue)}
                         />
                     );
                 })}
@@ -95,8 +99,6 @@ const RatingComponent = ({ courseId, currentRating }) => {
                     </button>
                 </div>
             )}
-            {submitted && <p className="text-lg mt-2">You rated this course: {rating} star{rating > 1 ? 's' : ''}</p>}
-            {!submitted && !ratingToConfirm && rating === 0 && <p className="text-lg mt-2">No ratings yet</p>}
         </RatingContainer>
     );
 };

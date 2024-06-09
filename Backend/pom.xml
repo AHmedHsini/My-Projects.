@@ -101,7 +101,23 @@
 			<artifactId>stripe-java</artifactId>
 			<version>21.13.0</version> <!-- Check for the latest version on Maven Central -->
 		</dependency>
-
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-config</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>jakarta.servlet</groupId>
+			<artifactId>jakarta.servlet-api</artifactId>
+			<scope>provided</scope>
+		</dependency>
 
 	</dependencies>
 

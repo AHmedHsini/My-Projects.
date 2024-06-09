@@ -1,5 +1,10 @@
 package A.M.PFE.alemni.cours;
 
+import A.M.PFE.alemni.cours.category.Category;
+import A.M.PFE.alemni.cours.category.CategoryService;
+import A.M.PFE.alemni.cours.video.Video;
+import A.M.PFE.alemni.cours.video.VideoRepository;
+import A.M.PFE.alemni.cours.video.VideoService;
 import A.M.PFE.alemni.user.UserRepository;
 import A.M.PFE.alemni.user.UserService;
 import A.M.PFE.alemni.user.model.PurchasedCourse;
@@ -10,7 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -26,7 +30,7 @@ public class CoursController {
     @Autowired
     private CoursService coursService;
     @Autowired
-    CoursRepository coursRepository;
+    private CoursRepository coursRepository;
     @Autowired
     private FileStorageService fileStorageService;
     @Autowired
@@ -35,14 +39,20 @@ public class CoursController {
     private PaymentService paymentService;
     @Autowired
     private UserService userService;
+    @Autowired
+    private VideoService videoService;
+    @Autowired
+    private VideoRepository videoRepository;
+    @Autowired
+    private CategoryService categoryService;
 
     // Get all courses
     @GetMapping
     public ResponseEntity<List<Cours>> getAllCourses() {
         List<Cours> courses = coursService.allCourses();
-        // Return the list of courses in the response
         return new ResponseEntity<>(courses, HttpStatus.OK);
     }
+
     // Get single course
     @GetMapping("/{courseId}")
     public ResponseEntity<Cours> getCourseById(@PathVariable String courseId) {
@@ -53,11 +63,22 @@ public class CoursController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
-    //search
+
+    // Search courses
     @GetMapping("/search")
     public List<Cours> searchCourses(@RequestParam String keyword) {
         return coursRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(keyword, keyword);
     }
+
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<List<Cours>> getCoursesByCategory(@PathVariable String categoryId) {
+        List<Cours> courses = coursService.getCoursesByCategoryId(categoryId);
+        if (courses.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        return new ResponseEntity<>(courses, HttpStatus.OK);
+    }
+
     // Get courses uploaded by a specific educator
     @GetMapping("/educator/{educatorId}")
     public ResponseEntity<List<Cours>> getCoursesByEducator(@PathVariable String educatorId) {
@@ -82,53 +103,43 @@ public class CoursController {
             @RequestParam("file") MultipartFile file,
             @ModelAttribute Cours cours,
             @RequestParam User educator,
-            @RequestParam CourseMediaType type) {
+            @RequestParam CourseMediaType type,
+            @RequestParam List<String> categoryIds) { // Include category IDs
         try {
-            // Check if the user is an educator
             if (!educator.isEducator()) {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
-
-            // Handle file upload and get the file URL
             String fileUrl = coursService.handleFileUpload(file, type);
-            cours.setCourseImage(fileUrl); // Set course image URL
-
-            // Set educator's name
+            cours.setCourseImage(fileUrl);
             cours.setEducatorName(educator.getFirstName() + " " + educator.getLastName());
 
-            // Call addCours in CoursService and get response map
-            Map<String, Object> response = coursService.addCours(cours, educator, file, type);
+            // Set categories
+            List<Category> categories = categoryService.getCategoriesByIds(categoryIds);
+            cours.setCategories(categories);
 
-            // Return created status with the response map
+            Map<String, Object> response = coursService.addCours(cours, educator, file, type);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (UnauthorizedException e) {
-            // Return forbidden status for unauthorized access
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (Exception e) {
-            // Log the error for debugging
             e.printStackTrace();
-            // Return internal server error status for other exceptions
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    //delete media
+
+
+    // Delete media
     @DeleteMapping("/{courseId}/delete-file")
-    public ResponseEntity<String> deleteFile(@PathVariable String courseId, @RequestParam("fileUrl") String fileUrl)  {
+    public ResponseEntity<String> deleteFile(@PathVariable String courseId, @RequestParam("fileUrl") String fileUrl) {
         try {
-            // Delete the file from storage
             fileStorageService.delete(fileUrl);
-
-            // Delete the file from the course
             coursService.deleteMediaFromCourse(courseId, fileUrl);
-
             return new ResponseEntity<>("File deleted successfully", HttpStatus.OK);
         } catch (IOException e) {
-            // Log specific exception information
             System.err.println("IOException occurred during file deletion: " + e.getMessage());
             e.printStackTrace();
             return new ResponseEntity<>("Failed to delete file due to I/O error", HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (Exception e) {
-            // Log other exception information
             System.err.println("Exception occurred during file deletion: " + e.getMessage());
             e.printStackTrace();
             return new ResponseEntity<>("Failed to delete file", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -140,23 +151,24 @@ public class CoursController {
     public ResponseEntity<Map<String, Object>> modifyCours(
             @RequestParam("cours") String coursJson,
             @RequestParam(value = "file", required = false) MultipartFile file,
-            @RequestParam User educator
-    ) {
+            @RequestParam("educator") String educatorId,
+            @RequestParam("categoryIds") List<String> categoryIds) {
         try {
-            // Parse the course JSON into a Cours object
             ObjectMapper objectMapper = new ObjectMapper();
             Cours cours = objectMapper.readValue(coursJson, Cours.class);
-
-            // Check if the user is an educator
-            if (!educator.isEducator()) {
+            Optional<User> educatorOptional = userRepository.findById(educatorId);
+            if (educatorOptional.isEmpty() || !educatorOptional.get().isEducator()) {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
+            User educator = educatorOptional.get();
 
-            // Call the service method to update the course
+            // Fetch and set the categories
+            List<Category> categories = categoryService.getCategoriesByIds(categoryIds);
+            cours.setCategories(categories);
+
             Map<String, Object> response = coursService.updateCours(cours, educator, file);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
-            // Handle exceptions (unauthorized, not found, etc.)
             e.printStackTrace();
             if (e instanceof UnauthorizedException) {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -173,21 +185,15 @@ public class CoursController {
     @DeleteMapping("/{coursId}")
     public ResponseEntity<Map<String, String>> deleteCours(@PathVariable String coursId, @RequestParam User educator) {
         try {
-            // Fetch the course
             Optional<Cours> courseOptional = coursRepository.findById(coursId);
             if (!courseOptional.isPresent()) {
                 return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
             }
             Cours course = courseOptional.get();
-
-            // Check if the user is the creator of the course
             if (!course.getEducatorId().equals(educator.getId())) {
                 return new ResponseEntity<>(null, HttpStatus.FORBIDDEN);
             }
-
-            // Delete the course and related quizzes
             coursService.deleteCours(coursId, educator);
-
             Map<String, String> response = new HashMap<>();
             response.put("message", "Course and related quizzes deleted successfully.");
             return new ResponseEntity<>(response, HttpStatus.OK);
@@ -196,36 +202,30 @@ public class CoursController {
         }
     }
 
-
-
     // Add a quiz to a course
     @PostMapping("/{courseId}/quizzes")
     public ResponseEntity<Map<String, Object>> addQuizToCourse(@PathVariable String courseId, @RequestParam String quizId, @RequestParam User educator) {
         try {
-            // Call the service method to add the quiz to the course and return the response
             Map<String, Object> response = coursService.addQuizToCourse(courseId, quizId, educator);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (UnauthorizedException e) {
-            // Return forbidden status if there's an unauthorized exception
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NotFoundException e) {
-            // Return not found status if the course or quiz is not found
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 
-    //upload Files
+    // Upload files
     @PostMapping("/{courseId}/upload-file")
     public ResponseEntity<String> uploadFile(
             @PathVariable String courseId,
             @RequestParam("file") MultipartFile file,
-            @RequestParam("type") String type, // Changed to String
+            @RequestParam("type") String type,
             @RequestParam User educator,
             @RequestParam("description") String description,
             @RequestParam("title") String title
     ) {
         try {
-            // Convert the incoming `type` to `CourseMediaType`
             CourseMediaType mediaType;
             switch (type.toUpperCase()) {
                 case "MP4":
@@ -241,73 +241,80 @@ public class CoursController {
                 default:
                     return new ResponseEntity<>("Invalid media type provided", HttpStatus.BAD_REQUEST);
             }
-
-            // Continue with your existing code and pass `mediaType` instead of `type`.
-            // Store the file and get the file URL
             String fileUrl = fileStorageService.store(file, mediaType);
             System.out.println("File stored at URL: " + fileUrl);
-
-            // Add media to course
             coursService.addMediaToCourse(courseId, fileUrl, mediaType, educator, title, description);
-
             return new ResponseEntity<>("File uploaded successfully", HttpStatus.OK);
         } catch (IOException e) {
-            // Log specific exception information
             System.err.println("IOException occurred during file upload: " + e.getMessage());
             e.printStackTrace();
             return new ResponseEntity<>("Failed to upload file due to I/O error", HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (Exception e) {
-            // Log other exception information
             System.err.println("Exception occurred during file upload: " + e.getMessage());
             e.printStackTrace();
             return new ResponseEntity<>("Failed to upload file", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
-    //Get files for Educator
+    // Get files for Educator
     @GetMapping("/{courseId}/files")
-    public ResponseEntity<Map<String, List<Media>>> getFilesByCourseId(@PathVariable String courseId, @RequestParam User educator) {
+    public ResponseEntity<Map<String, List<Media>>> getFilesByCourseId(@PathVariable String courseId, @RequestParam("educatorId") String educatorId) {
         Optional<Cours> courseOptional = coursRepository.findById(courseId);
-
         if (!courseOptional.isPresent()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-
         Cours course = courseOptional.get();
-
-        // Check if the current user is the course creator
-        if (!course.getEducatorId().equals(educator.getId())) {
+        if (!course.getEducatorId().equals(educatorId)) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
 
-        // Retrieve media files and group them by type
-        Map<String, List<Media>> groupedMediaFiles = course.getMedia()
-                .stream()
+        // Group other media files
+        Map<String, List<Media>> groupedMediaFiles = course.getMedia().stream()
                 .collect(Collectors.groupingBy(media -> media.getType().name()));
+
+        // Fetch videos for the course
+        List<Video> videos = videoRepository.findByCourseId(courseId);
+
+        // Convert videos to Media format with likes
+        List<Media> videoMedia = videos.stream().map(video -> {
+            Media media = new Media();
+            media.setId(video.getId());
+            media.setUrl(video.getUrl());
+            media.setType(CourseMediaType.VIDEO);
+            media.setTitle(video.getTitle());
+            media.setDescription(video.getDescription());
+            media.setViews(video.getViews());
+            media.setLikes(video.getLikes()); // Ensure likes are included
+            return media;
+        }).collect(Collectors.toList());
+
+        // Add videos to the grouped media files
+        groupedMediaFiles.put("VIDEO", videoMedia);
 
         return new ResponseEntity<>(groupedMediaFiles, HttpStatus.OK);
     }
-    //for User
+    // For User
     @GetMapping("/{courseId}/details")
-    public ResponseEntity<Map<String, List<Media>>> getFilesForUser(@PathVariable String courseId) {
+    public ResponseEntity<Map<String, List<Media>>> getFilesForUser(@PathVariable String courseId, @RequestParam("userId") String userId) {
         Optional<Cours> courseOptional = coursRepository.findById(courseId);
-
         if (!courseOptional.isPresent()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-
         Cours course = courseOptional.get();
-
-        // Retrieve media files and group them by type
-        Map<String, List<Media>> groupedMediaFiles = course.getMedia()
-                .stream()
-                .collect(Collectors.groupingBy(media -> media.getType().name()));
-
+        List<Video> videos = videoService.getVideosByCourseId(courseId);
+        Map<String, List<Media>> groupedMediaFiles = course.getMedia().stream().collect(Collectors.groupingBy(media -> media.getType().name()));
+        groupedMediaFiles.put("VIDEO", videos.stream().map(video -> {
+            Media media = new Media();
+            media.setId(video.getId());
+            media.setUrl(video.getUrl());
+            media.setType(CourseMediaType.VIDEO);
+            media.setTitle(video.getTitle());
+            media.setDescription(video.getDescription());
+            return media;
+        }).collect(Collectors.toList()));
         return new ResponseEntity<>(groupedMediaFiles, HttpStatus.OK);
     }
 
-
-    //payment
+    // Payment
     @PostMapping("/{courseId}/purchase")
     public ResponseEntity<?> purchaseCourse(@PathVariable String courseId, @RequestParam("userId") String userId) {
         try {
@@ -325,12 +332,15 @@ public class CoursController {
                 return ResponseEntity.badRequest().body("No credit card information found. Please add card details to proceed.");
             }
 
-            double coursePrice = course.getPrice(); // Assume getPrice() exists in your Cours model
+            double coursePrice = course.getPrice();
             String paymentIntent = paymentService.createPaymentIntent(userId, coursePrice);
 
             PurchasedCourse purchasedCourse = new PurchasedCourse(courseId, LocalDateTime.now());
             user.getPurchasedCourses().add(purchasedCourse);
             userRepository.save(user);
+
+            // Increment the purchase count
+            coursService.incrementPurchaseCount(courseId);
 
             return ResponseEntity.ok(Map.of("clientSecret", paymentIntent, "message", "Purchase initiated successfully. Complete the payment."));
         } catch (Exception e) {
@@ -338,38 +348,22 @@ public class CoursController {
         }
     }
 
-    @GetMapping("/{courseId}/check-purchase")
-    public ResponseEntity<?> checkIfUserHasPurchasedCourse(@PathVariable String courseId, @RequestParam("userId") String userId) {
-        try {
-            boolean isPurchased = coursService.hasPurchasedCourse(userId, courseId);
-            return ResponseEntity.ok(Map.of("isPurchased", isPurchased));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error checking course purchase status: " + e.getMessage());
-        }
-    }
     @GetMapping("/my-courses")
     public ResponseEntity<List<Cours>> getPurchasedCourses(@RequestParam("userId") String userId) {
         try {
-            // Fetch the user by ID
             Optional<User> userOptional = userRepository.findById(userId);
             if (!userOptional.isPresent()) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
             User user = userOptional.get();
-
-            // Get the list of purchased course IDs
-            List<String> purchasedCourseIds = user.getPurchasedCourses().stream()
-                    .map(PurchasedCourse::getCourseId)
-                    .collect(Collectors.toList());
-
-            // Fetch the courses from the repository
+            List<String> purchasedCourseIds = user.getPurchasedCourses().stream().map(PurchasedCourse::getCourseId).collect(Collectors.toList());
             List<Cours> purchasedCourses = coursRepository.findAllById(purchasedCourseIds);
-
             return new ResponseEntity<>(purchasedCourses, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
     @GetMapping("/purchase-history")
     public ResponseEntity<List<Map<String, Object>>> getPurchaseHistory(@RequestParam("userId") String userId) {
         try {
@@ -379,7 +373,6 @@ public class CoursController {
             }
             User user = userOptional.get();
             List<PurchasedCourse> purchaseHistory = user.getPurchasedCourses();
-
             List<Map<String, Object>> response = purchaseHistory.stream().map(purchasedCourse -> {
                 Map<String, Object> courseDetails = new HashMap<>();
                 Optional<Cours> courseOptional = coursRepository.findById(purchasedCourse.getCourseId());
@@ -394,10 +387,73 @@ public class CoursController {
                 }
                 return courseDetails;
             }).collect(Collectors.toList());
-
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    // Increment visit count
+    @PutMapping("/{courseId}/increment-visit")
+    public ResponseEntity<Void> incrementVisitCount(@PathVariable String courseId) {
+        try {
+            coursService.incrementVisitCount(courseId);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (NotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @GetMapping("/{courseId}/visit-count")
+    public ResponseEntity<Integer> getVisitCount(@PathVariable String courseId) {
+        Optional<Cours> courseOptional = coursService.getCourseById(courseId);
+        if (courseOptional.isPresent()) {
+            return ResponseEntity.ok(courseOptional.get().getVisitCount());
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PutMapping("/{courseId}/increment-purchase")
+    public ResponseEntity<Void> incrementPurchaseCount(@PathVariable String courseId) {
+        try {
+            coursService.incrementPurchaseCount(courseId);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (NotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    // Endpoint to get the purchase count
+    @GetMapping("/{courseId}/purchase-count")
+    public ResponseEntity<Integer> getPurchaseCount(@PathVariable String courseId) {
+        Optional<Cours> courseOptional = coursService.getCourseById(courseId);
+        if (courseOptional.isPresent()) {
+            return ResponseEntity.ok(courseOptional.get().getPurchaseCount());
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    @GetMapping("/{courseId}/check-purchase")
+    public ResponseEntity<Map<String, Boolean>> checkCourseOwnership(@PathVariable String courseId, @RequestParam("userId") String userId) {
+        try {
+            Optional<User> userOptional = userRepository.findById(userId);
+            if (!userOptional.isPresent()) {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+            User user = userOptional.get();
+            boolean isPurchased = user.getPurchasedCourses().stream().anyMatch(pc -> pc.getCourseId().equals(courseId));
+            Map<String, Boolean> response = new HashMap<>();
+            response.put("isPurchased", isPurchased);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @GetMapping("/most-bought-courses")
+    public ResponseEntity<List<Cours>> getMostBoughtCourses() {
+        List<Cours> courses = coursService.getMostBoughtCourses();
+        return new ResponseEntity<>(courses, HttpStatus.OK);
+    }
+
 }

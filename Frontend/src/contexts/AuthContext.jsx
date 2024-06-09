@@ -24,8 +24,9 @@ export const AuthProvider = ({ children }) => {
                 lastName: userData.lastName,
                 profilePicture: userData.profilePicture, 
                 role: userData.role,
-                token, // Include the token in the user object
+                token, 
             });
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         } catch (error) {
             console.error('Error validating token:', error);
             localStorage.removeItem('token');
@@ -38,15 +39,39 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             fetchUserData(token);
         } else {
             setIsLoading(false);
         }
     }, []);
 
+    const login = async (email, password) => {
+        setIsLoading(true);
+        try {
+            const response = await axios.post('/api/auth/login', { email, password });
+            const { token, user } = response.data;
+            localStorage.setItem('token', token);
+            setUser({
+                ...user,
+                token
+            });
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        } catch (error) {
+            console.error('Error logging in:', error);
+            setUser(null);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const logout = () => {
+        localStorage.removeItem('token');
+        setUser(null);
+        delete axios.defaults.headers.common['Authorization'];
+    };
+
     return (
-        <AuthContext.Provider value={{ user, setUser, isLoading }}>
+        <AuthContext.Provider value={{ user, setUser, isLoading, login, logout }}>
             {children}
         </AuthContext.Provider>
     );

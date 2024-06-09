@@ -1,48 +1,136 @@
 import React, { useState, useEffect } from 'react';
-import EducatorNavBar from '../components/EducatorComponents/EducatorSideBar';
+import EducatorNavBar from './EducatorComponents/EducatorSideBar';
 import { useAuth } from '../contexts/AuthContext';
+import { useDarkMode } from '../contexts/DarkMode';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { FaPlus, FaTrash } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaEye } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import AddCourseModal from './course/CreateCourse';
+import styled from 'styled-components';
+
+const CourseCard = styled.div`
+    width: 100%;
+    padding: 16px;
+    border: 1px solid ${(props) => (props.$isDarkMode ? '#2d2d2d' : '#e0e0e0')};
+    border-radius: 8px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    background-color: ${(props) => (props.$isDarkMode ? '#1a1a1a' : '#fff')};
+    color: ${(props) => (props.$isDarkMode ? '#cad2c5' : '#333')};
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+    margin-bottom: 16px;
+    min-height: 200px; /* Ensure uniform height */
+
+    &:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    img {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-right: 16px;
+    }
+
+    .course-info {
+        flex-grow: 1;
+
+        h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .description {
+            max-height: 4.5rem; /* 3 lines */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            white-space: normal;
+        }
+    }
+
+    .course-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+
+        .action-icons {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            margin-top: 8px;
+
+            .icon {
+                margin-left: 16px;
+                cursor: pointer;
+
+                &:hover {
+                    color: ${(props) => (props.$isDarkMode ? '#ff6b6b' : '#ff0000')};
+                }
+            }
+        }
+    }
+`;
 
 function EducatorPage() {
-    const { user } = useAuth();
+    const { user, isLoading } = useAuth();
+    const { isDarkMode, toggleDarkMode } = useDarkMode(); // Accessing dark mode context
     const navigate = useNavigate();
     const [courses, setCourses] = useState([]);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [courseToDelete, setCourseToDelete] = useState(null);
-    
-    // Load dark mode preference from local storage
-    const [isDarkMode, setIsDarkMode] = useState(() => {
-        const savedPreference = localStorage.getItem('isDarkMode');
-        return savedPreference !== null ? JSON.parse(savedPreference) : false;
-    });
+    const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
 
-    // Fetch courses for the educator
-    useEffect(() => {
+    const fetchCourses = async () => {
         if (!user || !user.token) {
             return;
         }
 
-        axios
-            .get(`/api/Courses/educator/${user.id}`, {
-                headers: {
-                    Authorization: `Bearer ${user.token}`,
-                },
-            })
-            .then((response) => {
-                setCourses(response.data);
-            })
-            .catch((error) => {
-                console.error('Error fetching courses:', error);
-                toast.error('Failed to fetch courses');
-            });
-    }, [user]);
+        try {
+            const headers = { Authorization: `Bearer ${user.token}` };
 
-    // Event Handlers
+            const response = await axios.get(`/api/Courses/educator/${user.id}`, { headers });
+            const coursesData = response.data;
+
+            const fetchCountsPromises = coursesData.map(async (course) => {
+                const viewCountResponse = await axios.get(`/api/Courses/${course.id}/visit-count`);
+                const purchaseCountResponse = await axios.get(`/api/Courses/${course.id}/purchase-count`);
+                return {
+                    ...course,
+                    viewCount: viewCountResponse.data,
+                    purchaseCount: purchaseCountResponse.data,
+                };
+            });
+
+            const coursesWithCounts = await Promise.all(fetchCountsPromises);
+            setCourses(coursesWithCounts);
+        } catch (error) {
+            console.error('Error fetching courses:', error);
+            toast.error('Failed to fetch courses');
+        }
+    };
+
+    useEffect(() => {
+        if (!user || isLoading) return;
+
+        if (user.role !== "Educator") {
+            navigate("/"); // Redirect to home or another appropriate page
+            return;
+        }
+
+        fetchCourses();
+    }, [user, isLoading, navigate]);
+
     const handleAddCourse = () => {
-        navigate('/educator/add-course');
+        setIsAddCourseModalOpen(true);
     };
 
     const handleModifyCourse = (courseId) => {
@@ -83,126 +171,81 @@ function EducatorPage() {
         setCourseToDelete(null);
     };
 
-    // Toggle theme and save preference to local storage
-    const toggleTheme = () => {
-        const newIsDarkMode = !isDarkMode;
-        setIsDarkMode(newIsDarkMode);
-        localStorage.setItem('isDarkMode', JSON.stringify(newIsDarkMode));
-    };
-
-    // Define colors based on theme
-    const pageBgColor = isDarkMode ? 'bg-[#253237]' : 'bg-[#FAFAFA]';
-    const textColor = isDarkMode ? 'text-[#CAD2C5]' : 'text-[#333333]';
-    const hoverBgColor = isDarkMode ? 'hover:bg-[#1D2D37]' : 'hover:bg-[#F2F2F2]';
-    const borderColor = isDarkMode ? 'border-gray-700' : 'border-gray-300';
-    const hoverTextColor = isDarkMode ? 'hover:text-[#14FFEC]' : 'hover:text-[#FF6B6B]';
-    const actionIconColor = isDarkMode ? 'text-[#CAD2C5]' : 'text-[#333333]';
-    const actionIconHoverColor = isDarkMode ? 'hover:text-red-500' : 'hover:text-red-600';
-
-    // Formatter to display the course price in Tunisian Dinar (DT) and English locale
     const currencyFormatter = new Intl.NumberFormat('fr-TN', {
         style: 'currency',
         currency: 'TND',
         minimumFractionDigits: 2,
     });
 
-    return (
-        <div className={`flex ${pageBgColor} min-h-screen`}>
-            {/* Include EducatorNavBar and pass dark mode props */}
-            <EducatorNavBar isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+    if (isLoading) {
+        return <div>Loading...</div>;
+    }
 
-            {/* Main content area */}
-            <div className={`flex-grow p-8 ${textColor} w-full max-w-6xl mx-auto p-8 ${isDarkMode ? 'bg-[#253237]' : 'bg-[#FAFAFA]'} rounded-lg`}>
-                {/* Sticky header with background color */}
+    if (!user || user.role !== "Educator") {
+        return <div>Unauthorized access. Redirecting...</div>;
+    }
+
+    return (
+        <div className={`flex min-h-screen ${isDarkMode ? 'bg-[#253237]' : 'bg-[#FAFAFA]'} text-${isDarkMode ? '[#CAD2C5]' : '[#333333]'}`}>
+            <EducatorNavBar isDarkMode={isDarkMode} toggleTheme={toggleDarkMode} />
+
+            <div className={`flex-grow p-8 max-w-6xl mx-auto p-8 rounded-lg`}>
                 <div className={`flex justify-between items-center mb-8 sticky top-0 z-10 p-4 rounded-lg ${isDarkMode ? 'bg-[#1A2D34]' : 'bg-[#E0E0E0]'}`}>
                     <h1 className="text-4xl font-bold">{'Your Added Courses'}</h1>
-                    <button
-                        onClick={handleAddCourse}
-                        className={`px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700 flex items-center justify-center`}
-                    >
+                    <button onClick={handleAddCourse} className={`px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700 flex items-center justify-center`}>
                         <FaPlus className="mr-2" /> Add Course
                     </button>
                 </div>
 
-                {/* Scrollable area for courses */}
                 {courses.length > 0 ? (
                     <ul className="space-y-4">
                         {courses.map((course) => (
-                            <button
-                                key={course.id}
-                                className={`w-full p-4 border rounded-lg transition-transform relative flex items-center hover:shadow-lg hover:scale-102 hover:translate-y-2 m-4 ${hoverBgColor} ${borderColor} ${textColor} hover:bg-${hoverBgColor}`}
-                                onClick={() => handleModifyCourse(course.id)}
-                                style={{ textAlign: 'left' }}
-                            >
-                                {/* Left section: Course image */}
+                            <CourseCard key={course.id} onClick={() => handleModifyCourse(course.id)} $isDarkMode={isDarkMode}>
                                 {course.courseImage && (
-                                    <img
-                                        src={course.courseImage}
-                                        alt={course.title}
-                                        className="w-32 h-32 object-cover rounded-lg mr-4"
-                                    />
+                                    <img src={course.courseImage} alt={course.title} />
                                 )}
-
-                                {/* Middle section: Course details */}
-                                <div className="flex-grow flex flex-col justify-center">
-                                    <h3 className="text-lg font-medium mb-2">{course.title}</h3>
-                                    <p className={`text-sm mb-2`}>
+                                <div className="course-info">
+                                    <h3>{course.title}</h3>
+                                    <div className="description">
                                         {course.description}
-                                    </p>
-                                    {/* Displaying the course price formatted in DT */}
-                                    <p className={`text-sm mb-4`}>
-                                        Price: {currencyFormatter.format(course.price)}
-                                    </p>
+                                    </div>
+                                    <p>Price: {currencyFormatter.format(course.price)}</p>
+                                    <div className="flex items-center space-x-4">
+                                        <div className="flex items-center text-green-500">
+                                            <FaPlus className="mr-1" /> Purchases: {course.purchaseCount}
+                                        </div>
+                                        <div className="flex items-center text-blue-500">
+                                            <FaEye className="mr-1" /> Views: {course.viewCount}
+                                        </div>
+                                    </div>
                                 </div>
-
-                                {/* Right section: Action icon */}
-                                <div
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        showConfirmDeletion(course);
-                                    }}
-                                    className="absolute top-4 right-4"
-                                >
-                                    <FaTrash
-                                        className={`${actionIconColor} ${actionIconHoverColor}`}
-                                        title="Delete"
-                                    />
+                                <div onClick={(e) => { e.stopPropagation(); showConfirmDeletion(course); }} className="course-actions">
+                                    <FaTrash className="icon" title="Delete" />
                                 </div>
-                            </button>
+                            </CourseCard>
                         ))}
                     </ul>
                 ) : (
-                    <p
-                        className={`${isDarkMode ? 'text-center text-[#CAD2C5]' : 'text-center text-[#333333]'}`}
-                    >
+                    <p className="text-center">
                         No courses available
                     </p>
                 )}
             </div>
 
-            {/* Confirmation dialog */}
             {showConfirmDialog && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
                     <div className={`p-6 rounded-lg ${isDarkMode ? 'bg-[#253237]' : 'bg-white'}`}>
                         <h3 className="text-lg font-medium mb-4">Confirm Deletion</h3>
                         <p className="mb-4">Are you sure you want to delete this course?</p>
                         <div className="flex justify-end space-x-4">
-                            <button
-                                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                                onClick={handleRemoveCourse}
-                            >
-                                Delete
-                            </button>
-                            <button
-                                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-                                onClick={hideConfirmDeletion}
-                            >
-                                Cancel
-                            </button>
+                            <button className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600" onClick={handleRemoveCourse}>Delete</button>
+                            <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700" onClick={hideConfirmDeletion}>Cancel</button>
                         </div>
                     </div>
                 </div>
             )}
+
+            <AddCourseModal isOpen={isAddCourseModalOpen} onClose={() => setIsAddCourseModalOpen(false)} refreshCourses={fetchCourses} isDarkMode={isDarkMode} />
         </div>
     );
 }

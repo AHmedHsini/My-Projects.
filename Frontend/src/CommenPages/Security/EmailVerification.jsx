@@ -17,7 +17,7 @@ function EmailVerification() {
                     setVerificationStatus('Verified Successfully!');
 
                     const timeout = setTimeout(() => {
-                        navigate('/login');
+                        navigate('/');
                     }, countdown * 1000);
 
                     return () => clearTimeout(timeout);

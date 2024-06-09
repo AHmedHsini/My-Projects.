@@ -1,0 +1,16 @@
+.category-button {
+    margin: 2px;
+    padding: 10px 20px;
+    border-radius: 9999px;
+    color: white;
+    background-color: #3b82f6; /* blue-500 */
+    transition: background-color 0.3s;
+}
+
+.category-button:hover {
+    background-color: #2563eb; /* blue-700 */
+}
+
+.category-button.selected {
+    background-color: #1d4ed8; /* blue-600 */
+}

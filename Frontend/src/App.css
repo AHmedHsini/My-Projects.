@@ -40,3 +40,45 @@
 .read-the-docs {
   color: #888;
 }
+:root {
+  --body: #FAFAFA;
+  --text: #333333;
+  --cardBackground: #FFFFFF;
+  --borderColor: #E0E0E0;
+  --headerBackground: #E0E0E0;
+  --hoverText: #FF6B6B;
+  --hoverBg: #F2F2F2;
+  --buttonBg: #00bfa5;
+  --buttonHoverBg: #008c7a;
+}
+
+body {
+  background-color: var(--body);
+  color: var(--text);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.card {
+  background-color: var(--cardBackground);
+  border-color: var(--borderColor);
+}
+
+.header {
+  background-color: var(--headerBackground);
+}
+
+.button {
+  background-color: var(--buttonBg);
+}
+
+.button:hover {
+  background-color: var(--buttonHoverBg);
+}
+
+.hover-text:hover {
+  color: var(--hoverText);
+}
+
+.hover-bg:hover {
+  background-color: var(--hoverBg);
+}

@@ -60,4 +60,14 @@ public class PasswordResetService {
             userRepository.save(user);
         }
     }
+
+    public boolean isSamePassword(String token, String newPassword) {
+        Optional<User> optionalUser = userRepository.findByResetToken(token);
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            return passwordEncoder.matches(newPassword, user.getPassword());
+        }
+        return false;
+    }
 }
+

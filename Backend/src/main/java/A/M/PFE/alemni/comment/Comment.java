@@ -15,13 +15,15 @@ public class Comment {
     private String commenterId;
     private String commenterName;
     private String commenterLastName;
-    private String courseId;  // Add this field
+    private String courseId; // Course ID (optional)
+    private String videoId;  // Video ID (optional)
 
-    public Comment(String body, String commenterId, String commenterName, String commenterLastName, String courseId) {
+    public Comment(String body, String commenterId, String commenterName, String commenterLastName, String courseId, String videoId) {
         this.body = body;
         this.commenterId = commenterId;
         this.commenterName = commenterName;
         this.commenterLastName = commenterLastName;
-        this.courseId = courseId;  // Set this field in the constructor
+        this.courseId = courseId;
+        this.videoId = videoId;
     }
 }

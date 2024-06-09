@@ -3,13 +3,15 @@ import { useAuth } from "../../contexts/AuthContext";
 import { FaShoppingCart, FaSearch } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import SearchBar from "./SearchBar";
-import './Header.css'; // Import the CSS file
+import LoginPopup from '../AuthPages/LoginPage'; // Import the LoginPopup component
+import './Header.css';
 
 function Header({ cartCount }) {
   const { user, setUser } = useAuth();
   const [isDropdownVisible, setDropdownVisible] = useState(false);
   const userMenuRef = useRef(null);
   const navigate = useNavigate();
+  const [isLoginPopupVisible, setLoginPopupVisible] = useState(false); // State to manage login popup visibility
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -37,17 +39,15 @@ function Header({ cartCount }) {
   };
 
   const handleMyLearning = () => {
-    navigate('/my-courses'); // Change the route to your desired route
+    navigate('/my-courses');
   };
 
   const handlePurchaseHistory = () => {
-    navigate('/purchase-history'); // Navigate to the Purchase History page
+    navigate('/purchase-history');
   };
 
-  // State to manage the visibility of the search bar
   const [isSearchVisible, setSearchVisible] = useState(false);
 
-  // Function to toggle the search bar visibility
   const toggleSearchBar = () => {
     setSearchVisible(!isSearchVisible);
   };
@@ -62,7 +62,12 @@ function Header({ cartCount }) {
               alt="Logo"
               className="logo"
             />
-            <h1 className="logo-text">3alemni</h1>
+            <h1 className="logo-text" style={{ 
+              fontSize: "28px", 
+              color: "#333", 
+              fontWeight: "bold",
+              lineHeight: "1.4",
+            }}>3alemni</h1>
           </a>
         </div>
         <div className={`search-bar-container ${isSearchVisible ? 'search-bar-visible' : ''}`}>
@@ -73,12 +78,6 @@ function Header({ cartCount }) {
         </div>
         <nav className="nav">
           <ul className="nav-list">
-            <li>
-              <div className="cart-container">
-                <FaShoppingCart className="cart-icon" />
-                <span className="cart-count">{cartCount}</span>
-              </div>
-            </li>
             {user ? (
               <div className="relative">
                 {user.profilePicture ? (
@@ -135,7 +134,7 @@ function Header({ cartCount }) {
                       <li className="user-menu-item" onClick={handleMyLearning}>My learning</li>
                       <li className="user-menu-item">My cart</li>
                       <li className="user-menu-item" onClick={handlePurchaseHistory}>Purchase history</li>
-                      <li className="user-menu-item" onClick={handleEditProfile}>Edit profile</li>
+                      <li className="user-menu-item" onClick={handleEditProfile}>Edit Profile</li>
                     </ul>
 
                     <div className="logout-container" onClick={handleLogout}>
@@ -147,9 +146,9 @@ function Header({ cartCount }) {
             ) : (
               <>
                 <li>
-                  <a href="/login" className="login-link">
+                  <button className="login-link" onClick={() => setLoginPopupVisible(true)}>
                     Log in
-                  </a>
+                  </button>
                 </li>
                 <li>
                   <a href="/register" className="signup-link">
@@ -161,6 +160,7 @@ function Header({ cartCount }) {
           </ul>
         </nav>
       </div>
+      {isLoginPopupVisible && <LoginPopup onClose={() => setLoginPopupVisible(false)} />}
     </header>
   );
 }

@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../contexts/AuthContext'; // Import useAuth hook
 import QuizUpdateForm from './QuizUpdateForm'; // Import the QuizUpdateForm component
-import NavBar from '../../components/EducatorComponents/EducatorNavBar';
+import NavBar from '../EducatorComponents/EducatorNavBar';
 
 
 function ManageQuizzes() {
@@ -61,7 +61,7 @@ function ManageQuizzes() {
     return (
         <div>
             <NavBar />
-        <div className="max-w-lg mx-auto">
+        <div className="max-w-lg mx-auto"style={{marginTop:'50px'}}>
             <h2 className="text-2xl font-bold mb-4">Manage Quizzes</h2>
             {/* Add Quiz button */}
             <button

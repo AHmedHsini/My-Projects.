@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import Header from "../headerComponents/Header";
@@ -7,10 +7,12 @@ import { CategoryContainer } from "./StyledComponents";
 import CourseCard from "./Components/CourseCard";
 import CourseContent from "./Components/CourseContent";
 import Modal from "./Components/Modal";
+import ReportModal from "../videospage/ReportModal";
+import { FaFlag } from 'react-icons/fa';
 
 function CourseDetails() {
     const { courseId } = useParams();
-    const { user } = useAuth();
+    const { user, isLoading } = useAuth();
     const [course, setCourse] = useState(null);
     const [quizzes, setQuizzes] = useState([]);
     const [files, setFiles] = useState({ PDF: [], VIDEO: [] });
@@ -20,6 +22,12 @@ function CourseDetails() {
     const [userHasCardInfo, setUserHasCardInfo] = useState(false);
     const [confirmPurchase, setConfirmPurchase] = useState(false);
     const [userOwnsCourse, setUserOwnsCourse] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
+
+    const [cardNumber, setCardNumber] = useState('');
+    const [expiryDate, setExpiryDate] = useState('');
+    const [cvv, setCvv] = useState('');
+    const [formErrors, setFormErrors] = useState({});
 
     useEffect(() => {
         const fetchCourseDetails = async () => {
@@ -27,11 +35,40 @@ function CourseDetails() {
                 const courseResponse = await axios.get(`/api/Courses/${courseId}`);
                 setCourse(courseResponse.data);
 
-                const quizzesResponse = await axios.get(`api/quiz/Courses/${courseId}`);
+                const quizzesResponse = await axios.get(`/api/quiz/Courses/${courseId}`);
                 setQuizzes(quizzesResponse.data);
 
-                const filesResponse = await axios.get(`/api/Courses/${courseId}/details`);
-                setFiles(filesResponse.data);
+                if (user && user.id) {
+                    const filesResponse = await axios.get(`/api/Courses/${courseId}/details`, {
+                        params: { userId: user.id }
+                    });
+
+                    const videoFiles = filesResponse.data.VIDEO;
+                    const watchProgressPromises = videoFiles.map(async (video) => {
+                        try {
+                            const progressResponse = await axios.get(`/api/videos/${video.id}/watch-history?userId=${user.id}`, {
+                                headers: {
+                                    Authorization: `Bearer ${user.token}`,
+                                },
+                            });
+                            return {
+                                ...video,
+                                watchProgress: progressResponse.data?.timestamp || 0,
+                                duration: progressResponse.data?.duration || 1,
+                            };
+                        } catch (error) {
+                            console.error('Failed to fetch watch progress for video', video.id, error);
+                            return {
+                                ...video,
+                                watchProgress: 0,
+                                duration: 1,
+                            };
+                        }
+                    });
+
+                    const videosWithProgress = await Promise.all(watchProgressPromises);
+                    setFiles({ ...filesResponse.data, VIDEO: videosWithProgress });
+                }
             } catch (err) {
                 setError("Failed to fetch course details");
                 console.error("Failed to fetch course details:", err);
@@ -39,8 +76,9 @@ function CourseDetails() {
                 setLoading(false);
             }
         };
+
         fetchCourseDetails();
-    }, [courseId]);
+    }, [courseId, user]);
 
     useEffect(() => {
         const checkUserCardInfo = async () => {
@@ -65,10 +103,16 @@ function CourseDetails() {
                 console.error("Error checking course ownership:", error);
             }
         };
-        checkCourseOwnership();
+        if (user) {
+            checkCourseOwnership();
+        }
     }, [courseId, user]);
 
     const handleBuyNow = () => {
+        if (!user) {
+            alert("Please log in to purchase the course.");
+            return;
+        }
         if (!userHasCardInfo) {
             setShowCardModal(true);
         } else {
@@ -78,9 +122,22 @@ function CourseDetails() {
 
     const handleCardSubmit = async (event) => {
         event.preventDefault();
-        const cardNumber = event.target.cardNumber.value;
-        const expiryDate = event.target.expiryDate.value;
-        const cvv = event.target.cvv.value;
+
+        const errors = {};
+        if (!cardNumber || cardNumber.length !== 16) {
+            errors.cardNumber = "Card number must be 16 digits.";
+        }
+        if (!expiryDate || !/^\d{2}\/\d{2}$/.test(expiryDate)) {
+            errors.expiryDate = "Expiry date must be in MM/YY format.";
+        }
+        if (!cvv || !/^\d{3}$/.test(cvv)) {
+            errors.cvv = "CVV must be 3 digits.";
+        }
+
+        if (Object.keys(errors).length > 0) {
+            setFormErrors(errors);
+            return;
+        }
 
         try {
             if (user && user.id) {
@@ -111,6 +168,19 @@ function CourseDetails() {
         }
     };
 
+    const handleReport = async (reason) => {
+        try {
+            await axios.post('/api/reports', {
+                userId: user.id,
+                courseId: courseId,
+                reason: reason
+            });
+            setShowReportModal(false);
+        } catch (error) {
+            console.error("Failed to submit report", error);
+        }
+    };
+
     if (loading) return <div>Loading...</div>;
     if (error) return <div>{error}</div>;
 
@@ -126,7 +196,14 @@ function CourseDetails() {
             <Header />
             <CategoryContainer>
                 <h3 className="text-xl font-bold text-indigo-600">Course Category:</h3>
-                <p className="text-gray-700 ml-2">{course.category}</p> {/* Add margin-left to the paragraph */}
+                <p className="text-gray-700 ml-2">
+                    {course && course.categories && course.categories.map(category => (
+                        <span key={category.id} className="mr-2">{category.name}</span>
+                    ))}
+                </p>
+                <button onClick={() => setShowReportModal(true)} className="ml-4 flex items-center text-red-500">
+                    <FaFlag className="mr-2" /> Report
+                </button>
             </CategoryContainer>
             <div style={{ borderRadius: "8px" }}>
                 <img
@@ -149,9 +226,41 @@ function CourseDetails() {
             <CourseContent files={files} quizzes={quizzes} userOwnsCourse={userOwnsCourse} courseId={courseId} />
             <Modal show={showCardModal} onClose={() => setShowCardModal(false)}>
                 <form onSubmit={handleCardSubmit} className="space-y-6 p-6">
-                    <input type="text" name="cardNumber" placeholder="Card Number" className="w-full" />
-                    <input type="text" name="expiryDate" placeholder="Expiry Date" className="w-full" />
-                    <input type="text" name="cvv" placeholder="CVV" className="w-full" />
+                    <div>
+                        <input
+                            type="text"
+                            name="cardNumber"
+                            placeholder="Card Number"
+                            value={cardNumber}
+                            onChange={(e) => setCardNumber(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded"
+                        />
+                        {formErrors.cardNumber && <p className="text-red-500 text-sm">{formErrors.cardNumber}</p>}
+                    </div>
+                    <div>
+                        <input
+                            type="text"
+                            name="expiryDate"
+                            placeholder="Expiry Date (MM/YY)"
+                            value={expiryDate}
+                            onChange={(e) => setExpiryDate(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded"
+                        />
+                        {formErrors.expiryDate && <p className="text-red-500 text-sm">{formErrors.expiryDate}</p>}
+                    </div>
+                    <div>
+                        <input
+                            type="text"
+                            name="cvv"
+                            placeholder="CVV"
+                            value={cvv}
+                            onChange={(e) => setCvv(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded"
+                            pattern="\d{3}"
+                            title="CVV must be 3 digits"
+                        />
+                        {formErrors.cvv && <p className="text-red-500 text-sm">{formErrors.cvv}</p>}
+                    </div>
                     <button
                         type="submit"
                         className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded"
@@ -160,7 +269,7 @@ function CourseDetails() {
                     </button>
                 </form>
             </Modal>
-            <Modal show={confirmPurchase} onClose={() => setConfirmPurchase(false)}>
+            <Modal show={confirmPurchase} hideCloseButton={true}>
                 <div className="p-6">
                     <p className="text-lg font-semibold mb-4">Confirm Purchase</p>
                     <div className="flex justify-end">
@@ -179,6 +288,11 @@ function CourseDetails() {
                     </div>
                 </div>
             </Modal>
+            <ReportModal
+                show={showReportModal}
+                onClose={() => setShowReportModal(false)}
+                onSubmit={handleReport}
+            />
         </div>
     );
 }

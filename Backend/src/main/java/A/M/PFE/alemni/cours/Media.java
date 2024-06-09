@@ -13,6 +13,9 @@ public class Media {
     private String url;
     private CourseMediaType type; // Could be VIDEO, PDF, IMAGE, etc.
     private String description;
+    private int views;
+    private int likes; // Add likes field
+
 
 }
 

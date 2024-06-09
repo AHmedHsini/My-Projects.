@@ -40,23 +40,22 @@ public class AdminService {
         List<User> allUsers = getAllUsers();
 
         // Count students using Java Streams and filter
-        int studentCount = (int) allUsers.stream()
+
+        return (int) allUsers.stream()
                 .filter(user -> user.getRole().toString().equalsIgnoreCase(User.Role.Student.toString()))
                 .count();
-
-        return studentCount;
     }
 
     public int getEducatorCount() {
         List<User> allUsers = getAllUsers();
 
         // Count educators using Java Streams and filter
-        int educatorCount = (int) allUsers.stream()
+
+        return (int) allUsers.stream()
                 .filter(user -> user.getRole().toString().equalsIgnoreCase(User.Role.Educator.toString()))
                 .count();
-
-        return educatorCount;
     }
+
 
 }
 

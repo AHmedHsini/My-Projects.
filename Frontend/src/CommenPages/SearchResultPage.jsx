@@ -3,6 +3,8 @@ import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
 import './SearchResultPage.css'; // Import the CSS file
+import Header from "./headerComponents/Header";
+
 
 function SearchResultPage() {
     const [searchResults, setSearchResults] = useState([]);
@@ -27,6 +29,7 @@ function SearchResultPage() {
 
     return (
         <div>
+            <Header />
             {/* Section with banner image as background */}
             <section className="search-result-banner">
                 <div className="search-result-container">

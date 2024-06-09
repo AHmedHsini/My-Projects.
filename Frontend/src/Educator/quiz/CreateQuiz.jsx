@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../contexts/AuthContext';
-import NavBar from '../../components/EducatorComponents/EducatorNavBar';
+import NavBar from '../EducatorComponents/EducatorNavBar';
 
 
 function CreateQuizForm() {
@@ -78,7 +78,7 @@ function CreateQuizForm() {
     return (
         <div>
             <NavBar />
-        <div className="max-w-lg mx-auto">
+        <div className="max-w-lg mx-auto" style={{marginTop:'50px'}} >
             <h2 className="text-2xl font-bold mb-4">Create Quiz</h2>
             <form onSubmit={handleSubmit}>
                 <div className="mb-4">

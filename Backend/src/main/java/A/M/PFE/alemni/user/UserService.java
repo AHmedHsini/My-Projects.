@@ -7,14 +7,20 @@ import A.M.PFE.alemni.user.model.User;
 import A.M.PFE.alemni.user.register.VerificationService;
 import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import javax.naming.AuthenticationException;
-import java.util.Optional;
+import java.nio.file.AccessDeniedException;
+import java.util.*;
 
 @Service
-public class UserService {
+public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final VerificationService verificationService;
@@ -27,6 +33,18 @@ public class UserService {
         this.verificationService = verificationService;
         this.jwtUtils = jwtUtils;
     }
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user= null;
+        try {
+            user = userRepository.findByEmail(email).orElseThrow(() -> new AccessDeniedException("Access to this resource is denied"));
+            var role = user.getRole();
+            return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), List.of((GrantedAuthority) role::toString)) ;
+        } catch (AccessDeniedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     //register
     public void registerUser(User user) throws MessagingException {
         // Check if user with the given email already exists

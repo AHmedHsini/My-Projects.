@@ -68,6 +68,31 @@ export const VideoListItem = styled.li`
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
   }
+
+  &.disabled {
+    pointer-events: none;
+    opacity: 0.5;
+
+    &:hover {
+      background-color: transparent;
+      box-shadow: none;
+      transform: none;
+    }
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 5px;
+    background-color: #ccc;
+    border-radius: 0 0 8px 8px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .progress {
+    height: 100%;
+    background-color: #4caf50;
+  }
 `;
 
 export const QuizzesList = styled.div`
@@ -99,6 +124,17 @@ export const QuizItem = styled.div`
     background-color: #f4f4f4;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
+  }
+
+  &.disabled {
+    pointer-events: none;
+    opacity: 0.5;
+
+    &:hover {
+      background-color: transparent;
+      box-shadow: none;
+      transform: none;
+    }
   }
 `;
 
@@ -137,6 +173,17 @@ export const PdfListItem = styled.div`
     background-color: #f4f4f4;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
+  }
+
+  &.disabled {
+    pointer-events: none;
+    opacity: 0.5;
+
+    &:hover {
+      background-color: transparent;
+      box-shadow: none;
+      transform: none;
+    }
   }
 `;
 

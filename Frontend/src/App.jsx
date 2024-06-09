@@ -27,6 +27,10 @@ import EmailVerification from './CommenPages/Security/EmailVerification';
 import EditProfile from './CommenPages/ProfileComponents/EditProfile';
 import MyCourses from './StudentPage/MyCourses ';
 import PurchaseHistory from './StudentPage/PurchaseHistory';
+import AdminPurchaseHistory from './Admin/AdminPurchaseHistory';
+import AddCategory from './Admin/AddCategory';
+import VideoPage from './CommenPages/videospage/VideoPage';
+import ReportsPage from './Admin/ReportsPage';
 
 // Set the base URL for all Axios requests
 axios.defaults.baseURL = 'http://localhost:8080'; // Replace 'http://localhost:8080' with your backend server URL
@@ -42,6 +46,7 @@ function App() {
                         <Route path="/login" element={<LoginPage />} />
                         <Route path="/register" element={<RegisterPage />} />
                         <Route path="/email-verification/:token" element={<EmailVerification />} />
+                        
 
                         
                         <Route path="/reset-password/:token" element={<PasswordReset />} />
@@ -52,7 +57,9 @@ function App() {
                         <Route path="/admin/students" element={<StudentsPage />} />
                         <Route path="/StudentDetails/:userId" element={<StudentDetails />} />
                         <Route path="/EducatorDetails/:userId" element={<EducatorDetails />} />
-
+                        <Route path="/admin/add-category" element={<AddCategory />} />
+                        <Route path="/admin/purchase-history" element={<AdminPurchaseHistory />} />
+                        <Route path="/admin/reports" element={<ReportsPage />} /> 
                         
                         <Route path="/educator" element={<EducatorPage />} />
                         <Route path="/profile" element={<ProfilePage />} />
@@ -70,6 +77,7 @@ function App() {
                         <Route path="/api/quiz/:quizId/attempt" element={<AttemptQuiz />} />
                         <Route path="/my-courses" element={<MyCourses />} />
                         <Route path="/purchase-history" element={<PurchaseHistory />} />
+                        <Route path="/video/:videoId" element={<VideoPage />} />
                     
                     </Routes>
                 </Router>

@@ -38,11 +38,13 @@ public class PasswordResetController {
     public ResponseEntity<?> resetPassword(@RequestParam("token") String token, @RequestBody Map<String, String> requestBody) {
         String newPassword = requestBody.get("password");
         if (newPassword != null) {
+            if (passwordResetService.isSamePassword(token, newPassword)) {
+                return ResponseEntity.badRequest().body("This password is already in use.");
+            }
             passwordResetService.resetPassword(token, newPassword);
             return ResponseEntity.ok("Password reset successfully.");
         } else {
             return ResponseEntity.badRequest().body("New password is missing in the request body.");
         }
     }
-
 }

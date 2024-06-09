@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useAuth } from '../../../contexts/AuthContext';
 import { CommentContainer, CommentInputContainer, CommentListContainer } from '../StyledComponents';
 
-const CommentSection = ({ courseId }) => {
+const CommentSection = ({ courseId, userOwnsCourse }) => {
     const { user } = useAuth();
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState("");
@@ -61,7 +61,7 @@ const CommentSection = ({ courseId }) => {
                     <div ref={commentsEndRef} />  {/* Empty div to act as a scroll target */}
                 </ul>
             </CommentListContainer>
-            {user ? (
+            {userOwnsCourse && user ? (
                 <CommentInputContainer>
                     <input
                         type="text"
@@ -79,7 +79,9 @@ const CommentSection = ({ courseId }) => {
                     </button>
                 </CommentInputContainer>
             ) : (
-                <p className="text-gray-500">Please log in to comment.</p>
+                !userOwnsCourse && (
+                    <p className="text-gray-500">Please purchase the course to comment.</p>
+                )
             )}
         </CommentContainer>
     );

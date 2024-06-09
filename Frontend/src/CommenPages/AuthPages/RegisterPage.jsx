@@ -11,12 +11,12 @@ function RegisterPage() {
     firstName: "",
     lastName: "",
     role: "Student", // Default role is Student
-    educatorId: "", // Field for educator ID
   });
 
   const [passwordStrength, setPasswordStrength] = useState(0); // State to track password strength
   const [passwordsMatch, setPasswordsMatch] = useState(true); // State to track if passwords match
   const [registrationError, setRegistrationError] = useState(""); // State to track registration error
+  const [showToast, setShowToast] = useState(false); // State to manage toast visibility
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
@@ -32,8 +32,12 @@ function RegisterPage() {
       // Store the JWT token in local storage
       localStorage.setItem("token", token);
 
-      // Navigate to home page after successful registration
-      navigate("/login");
+      // Show toast notification
+      setShowToast(true);
+      setTimeout(() => {
+        setShowToast(false);
+        navigate("/");
+      }, 2500);
     } catch (error) {
       if (error.response && error.response.data && error.response.data.error) {
         // Handle specific error messages from the backend
@@ -102,199 +106,184 @@ function RegisterPage() {
 
   return (
     <div>
-    <Header />
-    <div
-      className="flex justify-center items-center"
-      style={{
-        backgroundImage: "url('../../../assets/images/middle.png')",
-        width: "100%",
-        height: "800px",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        marginTop: "61px",
-        position: "relative", // Needed for absolute positioning of inner images
-      }}
-    >
-      <div className="w-full max-w-md p-6 bg-white rounded-xl shadow-xl transform transition duration-500 ease-in-out hover:scale-105">
-        <h1 className="text-3xl font-semibold text-center mb-6 text-gray-900">
-          Register
-        </h1>
-        {/* Display registration error message */}
-        {registrationError && (
-          <div className="text-red-500 mb-4">{registrationError}</div>
-        )}
-        <form onSubmit={handleRegister}>
-          {/* First Name */}
-          <div className="mb-4">
-            <label
-              className="block text-sm font-medium text-gray-700 mb-2"
-              htmlFor="firstName"
-            >
-              First Name
-            </label>
-            <input
-              id="firstName"
-              name="firstName"
-              type="text"
-              className="w-full p-3 border border-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter your first name"
-              value={formData.firstName}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-
-          {/* Last Name */}
-          <div className="mb-4">
-            <label
-              className="block text-sm font-medium text-gray-700 mb-2"
-              htmlFor="lastName"
-            >
-              Last Name
-            </label>
-            <input
-              id="lastName"
-              name="lastName"
-              type="text"
-              className="w-full p-3 border border-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter your last name"
-              value={formData.lastName}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-
-          {/* Email */}
-          <div className="mb-4">
-            <label
-              className="block text-sm font-medium text-gray-700 mb-2"
-              htmlFor="email"
-            >
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              className="w-full p-3 border border-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter your email"
-              value={formData.email}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-
-          {/* Password */}
-          <div className="mb-4">
-            <label
-              className="block text-sm font-medium text-gray-700 mb-2"
-              htmlFor="password"
-            >
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              className="w-full p-3 border border-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter your password"
-              value={formData.password}
-              onChange={handleInputChange}
-              required
-            />
-            {/* Password strength indicator */}
-            {passwordStrength > 0 && (
-              <div className="text-sm text-gray-500 mt-1">
-                Password Strength: {passwordStrength}/5
-                <div
-                  className="h-1 bg-green-500 mt-1"
-                  style={{ width: `${(passwordStrength / 5) * 100}%` }}
-                ></div>
-              </div>
-            )}
-          </div>
-
-          {/* Confirm Password */}
-          <div className="mb-6">
-            <label
-              className="block text-sm font-medium text-gray-700 mb-2"
-              htmlFor="confirmPassword"
-            >
-              Confirm Password
-            </label>
-            <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              className="w-full p-3 border border-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Confirm your password"
-              value={formData.confirmPassword}
-              onChange={handleInputChange}
-              required
-            />
-            {/* Display error message if passwords don't match */}
-            {!passwordsMatch && (
-              <div className="text-sm text-red-500 mt-1">
-                Passwords do not match
-              </div>
-            )}
-          </div>
-
-          {/* Role */}
-          <div className="mb-4">
-            <label
-              className="block text-sm font-medium text-gray-700 mb-2"
-              htmlFor="role"
-            >
-              Role
-            </label>
-            <select
-              id="role"
-              name="role"
-              className="w-full p-3 border border-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={formData.role}
-              onChange={handleInputChange}
-              required
-            >
-              <option value="Student">Student</option>
-              <option value="Educator">Educator</option>
-            </select>
-          </div>
-
-          {/* Educator ID (only shown if role is Educator) */}
-          {formData.role === "Educator" && (
+      <Header />
+      <div
+        className="flex justify-center items-center"
+        style={{
+          backgroundImage: "url('../../../assets/images/middle.png')",
+          width: "100%",
+          height: "800px",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          marginTop: "61px",
+          position: "relative", // Needed for absolute positioning of inner images
+        }}
+      >
+        <div className="w-full max-w-md p-6 bg-white rounded-xl shadow-xl transform transition duration-500 ease-in-out hover:scale-105">
+          <h1 className="text-3xl font-semibold text-center mb-6 text-gray-900">
+            Register
+          </h1>
+          {/* Display registration error message */}
+          {registrationError && (
+            <div className="text-red-500 mb-4">{registrationError}</div>
+          )}
+          <form onSubmit={handleRegister}>
+            {/* First Name */}
             <div className="mb-4">
               <label
                 className="block text-sm font-medium text-gray-700 mb-2"
-                htmlFor="educatorId"
+                htmlFor="firstName"
               >
-                Educator ID
+                First Name
               </label>
               <input
-                id="educatorId"
-                name="educatorId"
+                id="firstName"
+                name="firstName"
                 type="text"
                 className="w-full p-3 border border-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your Educator ID"
-                value={formData.educatorId}
+                placeholder="Enter your first name"
+                value={formData.firstName}
                 onChange={handleInputChange}
                 required
               />
             </div>
-          )}
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={!passwordsMatch} // Disable the button if passwords don't match
-            className="w-full py-3 bg-green-500 text-white rounded-lg font-semibold transition duration-500 ease-in-out hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            Sign Up
-          </button>
-        </form>
+            {/* Last Name */}
+            <div className="mb-4">
+              <label
+                className="block text-sm font-medium text-gray-700 mb-2"
+                htmlFor="lastName"
+              >
+                Last Name
+              </label>
+              <input
+                id="lastName"
+                name="lastName"
+                type="text"
+                className="w-full p-3 border border-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter your last name"
+                value={formData.lastName}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+
+            {/* Email */}
+            <div className="mb-4">
+              <label
+                className="block text-sm font-medium text-gray-700 mb-2"
+                htmlFor="email"
+              >
+                Email
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                className="w-full p-3 border border-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter your email"
+                value={formData.email}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+
+            {/* Password */}
+            <div className="mb-4">
+              <label
+                className="block text-sm font-medium text-gray-700 mb-2"
+                htmlFor="password"
+              >
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                className="w-full p-3 border border-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter your password"
+                value={formData.password}
+                onChange={handleInputChange}
+                required
+              />
+              {/* Password strength indicator */}
+              {passwordStrength > 0 && (
+                <div className="text-sm text-gray-500 mt-1">
+                  Password Strength: {passwordStrength}/5
+                  <div
+                    className="h-1 bg-green-500 mt-1"
+                    style={{ width: `${(passwordStrength / 5) * 100}%` }}
+                  ></div>
+                </div>
+              )}
+            </div>
+
+            {/* Confirm Password */}
+            <div className="mb-6">
+              <label
+                className="block text-sm font-medium text-gray-700 mb-2"
+                htmlFor="confirmPassword"
+              >
+                Confirm Password
+              </label>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                className="w-full p-3 border border-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Confirm your password"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                required
+              />
+              {/* Display error message if passwords don't match */}
+              {!passwordsMatch && (
+                <div className="text-sm text-red-500 mt-1">
+                  Passwords do not match
+                </div>
+              )}
+            </div>
+
+            {/* Role */}
+            <div className="mb-4">
+              <label
+                className="block text-sm font-medium text-gray-700 mb-2"
+                htmlFor="role"
+              >
+                Role
+              </label>
+              <select
+                id="role"
+                name="role"
+                className="w-full p-3 border border-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={formData.role}
+                onChange={handleInputChange}
+                required
+              >
+                <option value="Student">Student</option>
+                <option value="Educator">Educator</option>
+              </select>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={!passwordsMatch} // Disable the button if passwords don't match
+              className="w-full py-3 bg-green-500 text-white rounded-lg font-semibold transition duration-500 ease-in-out hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Sign Up
+            </button>
+          </form>
+        </div>
+
+        {/* Toast Notification */}
+        {showToast && (
+          <div className="fixed bottom-5 right-5 bg-green-500 text-white p-4 rounded-lg shadow-lg">
+            Registered successfully! Please check your email to verify your account.
+          </div>
+        )}
       </div>
     </div>
-  </div>
   );
 }
 
